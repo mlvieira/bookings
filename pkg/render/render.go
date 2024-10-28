@@ -55,7 +55,7 @@ func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData)
 func CreateTemplateCache() (map[string]*template.Template, error) {
 	templates := map[string]*template.Template{}
 
-	layouts, err := filepath.Glob("./templates/*.layout.html")
+	layouts, err := filepath.Glob("./templates/partials/*.layout.html")
 	if err != nil {
 		return templates, err
 	}
@@ -65,14 +65,14 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 		return templates, err
 	}
 
+	funcMap := template.FuncMap{
+		"dict": 	dict,
+	}
+
 	for _, page := range pages {
 		name := filepath.Base(page)
 
-		filenames := make([]string, 0, len(layouts)+1)
-		filenames = append(filenames, page)
-		filenames = append(filenames, layouts...)
-
-		ts, err := template.New(name).ParseFiles(filenames...)
+		ts, err := template.New(name).Funcs(funcMap).ParseFiles(append(layouts, page)...)
 		if err != nil {
 			return templates, err
 		}
@@ -81,4 +81,14 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 	}
 
 	return templates, nil
+}
+
+func dict(values ...any) map[string]any {
+	m := make(map[string]any)
+	for i := 0; i < len(values); i += 2 {
+		key := values[i].(string)
+		value := values[i+1]
+		m[key] = value
+	}
+	return m
 }
