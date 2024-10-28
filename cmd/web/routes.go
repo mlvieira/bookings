@@ -9,6 +9,7 @@ import (
 	"github.com/mlvieira/bookings/pkg/handlers"
 )
 
+// routes sets up application routes and middleware.
 func routes(app *config.AppConfig) http.Handler {
 	mux := chi.NewRouter()
 

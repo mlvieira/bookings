@@ -83,6 +83,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 	return templates, nil
 }
 
+// dict creates a map from a variadic list of key-value pairs.
 func dict(values ...any) map[string]any {
 	m := make(map[string]any)
 	for i := 0; i < len(values); i += 2 {
