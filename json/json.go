@@ -7,10 +7,10 @@ import (
 )
 
 type Person struct {
-    FirstName string `json:"first_name"`
-    LastName string `json:"last_name"`
-    HairColor string `json:"hair_color"`
-    HasDog bool `json:"has_dog"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	HairColor string `json:"hair_color"`
+	HasDog    bool   `json:"has_dog"`
 }
 
 func jsonTest() {
@@ -30,40 +30,39 @@ func jsonTest() {
     }
 ]`
 
-    var unmarshelled []Person
+	var unmarshelled []Person
 
-    err := json.Unmarshal([]byte(myJson), &unmarshelled)
-    if err != nil {
-        log.Println("Error")
-    }
+	err := json.Unmarshal([]byte(myJson), &unmarshelled)
+	if err != nil {
+		log.Println("Error")
+	}
 
-    log.Printf("unmarshelled: %v", unmarshelled)
+	log.Printf("unmarshelled: %v", unmarshelled)
 
+	var mySlice []Person
 
-    var mySlice []Person
+	m1 := Person{
+		FirstName: "Wally",
+		LastName:  "West",
+		HairColor: "red",
+		HasDog:    false,
+	}
 
-    m1 := Person{
-        FirstName: "Wally",
-        LastName: "West",
-        HairColor: "red",
-        HasDog: false,
-    }
+	mySlice = append(mySlice, m1)
 
-    mySlice = append(mySlice, m1)
+	m2 := Person{
+		FirstName: "Diana",
+		LastName:  "West",
+		HairColor: "black",
+		HasDog:    true,
+	}
 
-    m2 := Person{
-        FirstName: "Diana",
-        LastName: "West",
-        HairColor: "black",
-        HasDog: true,
-    }
+	mySlice = append(mySlice, m2)
 
-    mySlice = append(mySlice, m2)
+	newJson, err := json.MarshalIndent(mySlice, "", "   ")
+	if err != nil {
+		log.Println("Error")
+	}
 
-    newJson, err := json.MarshalIndent(mySlice, "", "   ")
-    if err != nil {
-        log.Println("Error")
-    }
-
-    fmt.Println(string(newJson))
+	fmt.Println(string(newJson))
 }

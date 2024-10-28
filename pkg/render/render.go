@@ -66,7 +66,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 	}
 
 	funcMap := template.FuncMap{
-		"dict": 	dict,
+		"dict": dict,
 	}
 
 	for _, page := range pages {
