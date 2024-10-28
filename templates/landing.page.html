@@ -10,28 +10,7 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="/">Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/about">About</a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                        data-bs-auto-close="true" aria-expanded="false">
-                        Rooms
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="/rooms/generals-quarters">General's Quarters</a></li>
-                        <li><a class="dropdown-item" href="/rooms/majors-suite">Major's suite</a></li>
-                    </ul>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/book">Book Now</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/contact">Contact</a>
-                </li>
+                {{template "navLinks" (dict "DropUp" false)}}
             </ul>
         </div>
     </div>
@@ -123,26 +102,4 @@
         </div>
     </div>
 </div>
-
-<footer class="d-flex flex-wrap justify-content-between bg-dark align-items-center py-3 px-3 mt-4 border-top"
-    data-bs-theme="dark">
-    <p class="col-md-4 mb-0 text-body-secondary">© 2024 Company, Inc</p>
-
-    <ul class="nav col-md-4 justify-content-end">
-        <li class="nav-item"><a href="/" class="nav-link px-2 text-body-secondary">Home</a></li>
-        <li class="nav-item"><a href="/about" class="nav-link px-2 text-body-secondary">About</a></li>
-        <li class="nav-item dropdown dropup">
-            <a class="nav-link px-2 text-body-secondary dropdown-toggle" href="#" role="button"
-                data-bs-toggle="dropdown" data-bs-auto-close="true" aria-expanded="false">
-                Rooms
-            </a>
-            <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="/rooms/generals-quarters">General's Quarters</a></li>
-                <li><a class="dropdown-item" href="/rooms/majors-suite">Major's suite</a></li>
-            </ul>
-        </li>
-        <li class="nav-item"><a href="/book" class="nav-link px-2 text-body-secondary">Book Now</a></li>
-        <li class="nav-item"><a href="/contact" class="nav-link px-2 text-body-secondary">Contact</a></li>
-    </ul>
-</footer>
 {{end}}
