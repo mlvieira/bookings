@@ -1,0 +1,16 @@
+{{define "navLinks"}}
+<li class="nav-item"><a href="/" class="nav-link px-2 text-body-secondary">Home</a></li>
+<li class="nav-item"><a href="/about" class="nav-link px-2 text-body-secondary">About</a></li>
+<li class="nav-item {{if .DropUp}}dropup{{else}}dropdown{{end}}">
+    <a class="nav-link px-2 text-body-secondary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+        data-bs-auto-close="true" aria-expanded="false">
+        Rooms
+    </a>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="/rooms/generals-quarters">General's Quarters</a></li>
+        <li><a class="dropdown-item" href="/rooms/majors-suite">Major's suite</a></li>
+    </ul>
+</li>
+<li class="nav-item"><a href="/book" class="nav-link px-2 text-body-secondary">Book Now</a></li>
+<li class="nav-item"><a href="/contact" class="nav-link px-2 text-body-secondary">Contact</a></li>
+{{end}}
