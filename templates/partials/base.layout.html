@@ -15,6 +15,16 @@
 </head>
 
 <body>
+    <nav class="navbar navbar-expand-lg bg-dark border-body px-3" data-bs-theme="dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Navbar</a>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    {{template "navLinks" (dict "DropUp" false)}}
+                </ul>
+            </div>
+        </div>
+    </nav>
     {{block "content" .}}
     {{end}}
     <footer class="d-flex flex-wrap justify-content-between bg-dark align-items-center py-3 px-3 mt-4 border-top"
