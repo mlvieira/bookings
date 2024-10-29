@@ -1,0 +1,18 @@
+{{define "availability-form"}}
+<form action="/availability" method="POST" id="availability-form" class="needs-validation" novalidate>
+    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+    <div class="row mb-3" id="reservation-dates">
+        <div class="col">
+            <input type="text" class="form-control" id="start_date" name="start_date" aria-describedby="startDateHelp"
+                required placeholder="Arrival" disabled>
+        </div>
+        <div class="col">
+            <input type="text" class="form-control" id="end_date" name="end_date" aria-describedby="endDateHelp"
+                required placeholder="Departure" disabled>
+        </div>
+    </div>
+    <div class="col">
+        <button type="submit" class="btn btn-primary cards">Search Availability</button>
+    </div>
+</form>
+{{end}}

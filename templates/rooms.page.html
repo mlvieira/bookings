@@ -1,0 +1,35 @@
+{{template "base" .}}
+
+{{define "css"}}
+<link href="/static/css/datepicker.min.css" rel="stylesheet">
+{{end}}
+
+{{define "content"}}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-6 col-md-6 col-sm-12 col-xs-12 mx-auto text-center mt-4">
+            <img src="{{index .StringMap "image_path"}}" class="img-fluid img-thumbnail rounded shadow cards">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <h1 class="text-center mt-5">{{index .StringMap "room_name"}}</h1>
+            <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Voluptas dolor amet cum esse provident eligendi
+                ullam cumque sit laboriosam consectetur praesentium, error quod, quibusdam minus soluta voluptatibus
+                non. Quos, consequatur? Lorem ipsum dolor sit amet consectetur adipisicing elit. Sequi rerum, cum
+                necessitatibus id laboriosam esse modi eum similique accusantium, aliquid quasi quaerat quidem beatae
+                commodi maxime tempore assumenda quae magni!</p>
+        </div>
+    </div>
+    <div class="col text-center my-5">
+        <a id="search-availability" class="btn btn-success shadow cards">Check Availability</a>
+    </div>
+
+    <div id="availability-form-container" class="d-none">
+        {{template "availability-form" .}}
+    </div>
+</div>
+{{end}}
+{{define "js"}}
+<script src="/static/js/datepicker-full.min.js"></script>
+{{end}}
