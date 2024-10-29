@@ -1,0 +1,34 @@
+{{template "base" .}}
+{{define "content"}}
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h1 class="mt-4 text-center">Make Reservation</h1>
+        </div>
+    </div>
+    <form action="/book" method="POST" class="needs-validation row g-3" novalidate>
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="col-md-6">
+            <label for="first_name" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="first_name" name="first_name" aria-describedby="lastNameHelp"
+                required autocomplete="off" autocapitalize="on">
+        </div>
+        <div class="col-md-6">
+            <label for="last_name" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="last_name" name="last_name" aria-describedby="lastNameHelp"
+                required autocomplete="off" autocapitalize="on">
+        </div>
+        <div class="col-md-6">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" aria-describedby="email" required>
+        </div>
+        <div class="col-md-6">
+            <label for="phone" class="form-label">Phone number</label>
+            <input type="phone" class="form-control" id="phone" name="phone" aria-describedby="phone" required>
+        </div>
+        <div class="col-md-12">
+            <button type="submit" class="btn btn-primary">Send</button>
+        </div>
+    </form>
+</div>
+{{end}}
