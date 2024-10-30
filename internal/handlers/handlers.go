@@ -3,9 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/mlvieira/bookings/internal/config"
+	"github.com/mlvieira/bookings/internal/forms"
 	"github.com/mlvieira/bookings/internal/models"
 	"github.com/mlvieira/bookings/internal/render"
 )
@@ -92,7 +94,49 @@ func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Repository) Booking(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, r, "reservation.page.html", &models.TemplateData{})
+	var emptyReservation models.Reservation
+	data := make(map[string]any)
+
+	data["reservation"] = emptyReservation
+
+	render.RenderTemplate(w, r, "reservation.page.html", &models.TemplateData{
+		Form: forms.New(nil),
+		Data: data,
+	})
+}
+
+func (m *Repository) PostBooking(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	reservation := models.Reservation{
+		FirstName: r.Form.Get("first_name"),
+		LastName:  r.Form.Get("last_name"),
+		Email:     r.Form.Get("email"),
+		Phone:     r.Form.Get("phone"),
+	}
+
+	form := forms.New(r.PostForm)
+
+	form.Required("first_name", "last_name", "email")
+	form.MinLength("first_name", 3, r)
+	form.MinLength("last_name", 3, r)
+	form.IsEmail("email")
+
+	if !form.Valid() {
+		data := make(map[string]any)
+		data["reservation"] = reservation
+
+		render.RenderTemplate(w, r, "reservation.page.html", &models.TemplateData{
+			Form: form,
+			Data: data,
+		})
+
+		return
+	}
 }
 
 // About is the about page handler
