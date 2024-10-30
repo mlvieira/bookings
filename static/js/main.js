@@ -66,19 +66,27 @@ const Prompt = () => {
 		});
 	};
 
-	const toast = ({ msg = "", icon = "success", position = "top-end" }) => {
+	const toast = async ({ msg = "", icon = "success", position = "top-end" }) => {
 		const Toast = Swal.mixin({
 			toast: true,
 			position,
 			showConfirmButton: false,
 			timer: 3000,
+			customClass: {
+				popup: 'bg-white border-0 shadow-sm position-relative'
+			},
 			timerProgressBar: true,
 			didOpen: (toast) => {
+				const closeButton = document.createElement('button');
+				closeButton.classList.add('btn-close', 'position-absolute', 'top-0', 'end-0', 'm-2');
+				closeButton.addEventListener('click', () => Swal.close());
+				toast.appendChild(closeButton);
+
 				toast.addEventListener('mouseenter', Swal.stopTimer);
 				toast.addEventListener('mouseleave', Swal.resumeTimer);
 			}
 		});
-		Toast.fire({ icon, title: msg });
+		await Toast.fire({ icon, title: msg });
 	};
 
 	const custom = async (config) => {
@@ -187,9 +195,24 @@ const roomAvailability = () => {
 	});
 };
 
+const displayMessages = async () => {
+	const popUp = document.querySelectorAll('.do-popup');
+	if (!popUp) return;
+
+	const alert = Prompt();
+
+	for (const err of popUp) {
+		await alert.toast({
+			msg: err.dataset.message,
+			icon: err.dataset.class,
+		});
+	};
+};
+
 document.addEventListener('DOMContentLoaded', () => {
 	'use strict'
 
 	drawDatePicker();
 	roomAvailability();
+	displayMessages();
 });
