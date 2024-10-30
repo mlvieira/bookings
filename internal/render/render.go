@@ -19,6 +19,7 @@ func NewTemplates(a *config.AppConfig) {
 	app = a
 }
 
+// AddDefaultData adds common data for all requests
 func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
 	td.Flash = app.Session.PopString(r.Context(), "flash")
 	td.Error = app.Session.PopString(r.Context(), "error")
@@ -57,6 +58,7 @@ func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, td *mod
 	}
 }
 
+// CreateTemplateCache creates cache for the templates
 func CreateTemplateCache() (map[string]*template.Template, error) {
 	templates := map[string]*template.Template{}
 

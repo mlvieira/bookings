@@ -32,14 +32,17 @@ func NewHandlers(r *Repository) {
 	Repo = r
 }
 
+// Landing handles the GET request for the landing page
 func (m *Repository) Landing(w http.ResponseWriter, r *http.Request) {
 	render.RenderTemplate(w, r, "landing.page.html", &models.TemplateData{})
 }
 
+// Contact handles the GET request for the contact page
 func (m *Repository) Contact(w http.ResponseWriter, r *http.Request) {
 	render.RenderTemplate(w, r, "contact.page.html", &models.TemplateData{})
 }
 
+// RoomMajors handles the GET request for Major's Suite room page
 func (m *Repository) RoomMajors(w http.ResponseWriter, r *http.Request) {
 	stringMap := make(map[string]string)
 	stringMap["room_name"] = "Major's Suite"
@@ -51,6 +54,7 @@ func (m *Repository) RoomMajors(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// RoomGenerals handles the GET request for General's Quarters room page
 func (m *Repository) RoomGenerals(w http.ResponseWriter, r *http.Request) {
 	stringMap := make(map[string]string)
 	stringMap["room_name"] = "General's quarter"
@@ -62,15 +66,18 @@ func (m *Repository) RoomGenerals(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Availability handles the GET request for the availability page
 func (m *Repository) Availability(w http.ResponseWriter, r *http.Request) {
 	render.RenderTemplate(w, r, "availability.page.html", &models.TemplateData{})
 }
 
+// jsonResponse defines the structure of a JSON response with status and message
 type jsonResponse struct {
 	OK      bool   `json:"ok"`
 	Message string `json:"message"`
 }
 
+// AvailabilityJSON handles the POST request and returns a JSON response
 func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 	resp := jsonResponse{
 		OK:      true,
@@ -86,6 +93,7 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 	w.Write(out)
 }
 
+// PostAvailability handles the POST request to search if room is available
 func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
 	start := r.Form.Get("start_date")
 	end := r.Form.Get("end_date")
@@ -93,6 +101,7 @@ func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf("Posted. Start date %s and End date is %s", start, end)))
 }
 
+// Booking handles the GET request for booking form
 func (m *Repository) Booking(w http.ResponseWriter, r *http.Request) {
 	var emptyReservation models.Reservation
 	data := make(map[string]any)
@@ -105,6 +114,7 @@ func (m *Repository) Booking(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// PostBooking handles the POST request for booking
 func (m *Repository) PostBooking(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
@@ -143,6 +153,7 @@ func (m *Repository) PostBooking(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/book/summary", http.StatusSeeOther)
 }
 
+// ReservationSummary handles the GET request with the data from the reservation sent
 func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) {
 	reservation, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
 	if !ok {
@@ -162,7 +173,7 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
-// About is the about page handler
+// About handles the GET request for the about page
 func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
 
 	stringMap := make(map[string]string)
