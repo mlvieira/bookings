@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/mlvieira/bookings/pkg/config"
-	"github.com/mlvieira/bookings/pkg/handlers"
+	"github.com/mlvieira/bookings/internal/config"
+	"github.com/mlvieira/bookings/internal/handlers"
 )
 
 // routes sets up application routes and middleware.

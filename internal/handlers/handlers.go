@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/mlvieira/bookings/pkg/config"
-	"github.com/mlvieira/bookings/pkg/models"
-	"github.com/mlvieira/bookings/pkg/render"
+	"github.com/mlvieira/bookings/internal/config"
+	"github.com/mlvieira/bookings/internal/models"
+	"github.com/mlvieira/bookings/internal/render"
 )
 
 // Repo the repository used by the handlers
