@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
 	"testing"
@@ -28,7 +29,7 @@ var testsData = []testsDataType{
 	{"contact", "/contact", "GET", []postData{}, http.StatusOK},
 	{"availabilityGET", "/availability", "GET", []postData{}, http.StatusOK},
 	{"bookingGET", "/book", "GET", []postData{}, http.StatusOK},
-	{"bookingsummary", "/book/summary", "GET", []postData{}, http.StatusOK},
+	{"bookingsummary", "/book/summary", "GET", []postData{}, http.StatusInternalServerError},
 
 	{"availabilityPOST", "/availability", "POST", []postData{
 		{key: "start_date", value: "02-02-2000"},
@@ -50,21 +51,35 @@ var testsData = []testsDataType{
 
 func TestHandlers(t *testing.T) {
 	routes := getRoutes()
+
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	client := &http.Client{
+		Jar: jar,
+	}
+
 	ts := httptest.NewTLSServer(routes)
 
 	defer ts.Close()
 
+	client.Transport = &http.Transport{
+		TLSClientConfig: ts.Client().Transport.(*http.Transport).TLSClientConfig,
+	}
+
 	for _, test := range testsData {
 		if test.method == "GET" {
-			getRequest(ts, test, t)
+			getRequest(client, ts.URL, test, t)
 		} else {
-			postRequest(ts, test, t)
+			postRequest(client, ts.URL, test, t)
 		}
 	}
 }
 
-func getRequest(ts *httptest.Server, test testsDataType, t *testing.T) {
-	res, err := ts.Client().Get(ts.URL + test.url)
+func getRequest(client *http.Client, baseUrl string, test testsDataType, t *testing.T) {
+	res, err := client.Get(baseUrl + test.url)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,14 +89,14 @@ func getRequest(ts *httptest.Server, test testsDataType, t *testing.T) {
 	}
 }
 
-func postRequest(ts *httptest.Server, test testsDataType, t *testing.T) {
+func postRequest(client *http.Client, baseUrl string, test testsDataType, t *testing.T) {
 	values := url.Values{}
 
 	for _, param := range test.params {
 		values.Add(param.key, param.value)
 	}
 
-	res, err := ts.Client().PostForm(ts.URL+test.url, values)
+	res, err := client.PostForm(baseUrl+test.url, values)
 	if err != nil {
 		t.Fatal(err)
 	}

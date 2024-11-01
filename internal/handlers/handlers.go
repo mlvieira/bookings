@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/mlvieira/bookings/internal/config"
 	"github.com/mlvieira/bookings/internal/forms"
+	"github.com/mlvieira/bookings/internal/helpers"
 	"github.com/mlvieira/bookings/internal/models"
 	"github.com/mlvieira/bookings/internal/render"
 )
@@ -86,7 +87,8 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 
 	out, err := json.Marshal(resp)
 	if err != nil {
-		panic(err)
+		helpers.ServerError(w, err)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -118,7 +120,7 @@ func (m *Repository) Booking(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) PostBooking(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		log.Println(err)
+		helpers.ServerError(w, err)
 		return
 	}
 
@@ -157,8 +159,9 @@ func (m *Repository) PostBooking(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) {
 	reservation, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
 	if !ok {
-		log.Println("Error getting session value")
-		m.App.Session.Put(r.Context(), "error", "Can't get reservation from session")
+		err := errors.New("can't get reservation from session")
+		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}

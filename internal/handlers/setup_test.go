@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/mlvieira/bookings/internal/config"
+	"github.com/mlvieira/bookings/internal/helpers"
 	"github.com/mlvieira/bookings/internal/models"
 	"github.com/mlvieira/bookings/internal/render"
 )
@@ -37,6 +38,7 @@ func getRoutes() http.Handler {
 	repo := NewRepo(&app)
 	NewHandlers(repo)
 	render.NewTemplates(&app)
+	helpers.NewHelpers(&app)
 
 	mux := chi.NewRouter()
 

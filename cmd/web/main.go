@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/mlvieira/bookings/internal/config"
+	"github.com/mlvieira/bookings/internal/handlers"
+	"github.com/mlvieira/bookings/internal/helpers"
 	"github.com/mlvieira/bookings/internal/render"
 	"github.com/mlvieira/bookings/internal/routes"
 )
@@ -41,6 +43,11 @@ func run() error {
 	app.TemplateCache = tc
 	app.UseCache = app.InProduction
 	app.Port = ":8080"
+
+	repo := handlers.NewRepo(&app)
+	handlers.NewHandlers(repo)
+	render.NewTemplates(&app)
+	helpers.NewHelpers(&app)
 
 	return nil
 }
