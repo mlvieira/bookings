@@ -2,7 +2,9 @@ package config
 
 import (
 	"log"
+	"net/http"
 	"text/template"
+	"time"
 
 	"github.com/alexedwards/scs/v2"
 )
@@ -13,7 +15,23 @@ type AppConfig struct {
 	TemplateCache map[string]*template.Template
 	InfoLog       *log.Logger
 	InProduction  bool
+	Port          string
 	Session       *scs.SessionManager
 }
 
-const PortNumber = ":8080"
+// SetupAppConfig initializes the main application configuration
+func SetupAppConfig(inProduction bool) *AppConfig {
+
+	app := AppConfig{
+		InProduction: inProduction,
+	}
+
+	session := scs.New()
+	session.Lifetime = 24 * time.Hour
+	session.Cookie.Persist = true
+	session.Cookie.SameSite = http.SameSiteLaxMode
+	session.Cookie.Secure = app.InProduction
+	app.Session = session
+
+	return &app
+}

@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
@@ -16,7 +15,6 @@ import (
 )
 
 var app config.AppConfig
-var session *scs.SessionManager
 
 func getRoutes() http.Handler {
 	if err := os.Chdir("../.."); err != nil {
@@ -25,14 +23,7 @@ func getRoutes() http.Handler {
 
 	gob.Register(models.Reservation{})
 
-	app.InProduction = true
-
-	session = scs.New()
-	session.Lifetime = 24 * time.Hour
-	session.Cookie.Persist = true
-	session.Cookie.SameSite = http.SameSiteLaxMode
-	session.Cookie.Secure = app.InProduction
-	app.Session = session
+	app = *config.SetupAppConfig(false)
 
 	tc, err := render.CreateTemplateCache()
 	if err != nil {
@@ -41,27 +32,16 @@ func getRoutes() http.Handler {
 
 	app.TemplateCache = tc
 	app.UseCache = app.InProduction
+	app.Port = ":8080"
 
 	repo := NewRepo(&app)
 	NewHandlers(repo)
 	render.NewTemplates(&app)
 
-	if repo == nil {
-		log.Fatal("repo is nil")
-	}
-	if app.TemplateCache == nil {
-		log.Fatal("app.TemplateCache is nil")
-	} else {
-		log.Println("Template cache initialized successfully")
-	}
-
 	mux := chi.NewRouter()
 
 	mux.Use(middleware.Recoverer)
-	mux.Use(SessionLoad)
-
-	fileServer := http.FileServer(http.Dir("./static"))
-	mux.Handle("/static/*", http.StripPrefix("/static/", fileServer))
+	mux.Use(sessionLoad(app.Session))
 
 	mux.Get("/", Repo.Landing)
 	mux.Get("/about", Repo.About)
@@ -75,10 +55,13 @@ func getRoutes() http.Handler {
 	mux.Post("/book", Repo.PostBooking)
 	mux.Get("/book/summary", Repo.ReservationSummary)
 
+	fileServer := http.FileServer(http.Dir("./static"))
+	mux.Handle("/static/*", http.StripPrefix("/static/", fileServer))
+
 	return mux
 }
 
-// SessionLoad loads and save the session on every request
-func SessionLoad(next http.Handler) http.Handler {
-	return session.LoadAndSave(next)
+// sessionLoad loads and saves the session on every request
+func sessionLoad(session *scs.SessionManager) func(http.Handler) http.Handler {
+	return session.LoadAndSave
 }
