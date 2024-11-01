@@ -1,0 +1,13 @@
+---
+development:
+  dialect: "mysql"
+  database: "bookings"
+  host: "localhost"
+  port: "3306"
+  user: "dev"
+  password: "dev"
+  options:
+    parseTime: true
+    multiStatements: true
+    readTimeout: 3s
+    collation: "utf8mb4_general_ci"
