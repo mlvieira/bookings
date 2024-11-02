@@ -45,19 +45,19 @@ func TestRenderTemplate(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 
-	err = RenderTemplate(rr, r, "home.page.html", &models.TemplateData{})
+	err = Template(rr, r, "home.page.html", &models.TemplateData{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = RenderTemplate(rr, r, "notexist.page.html", &models.TemplateData{})
+	err = Template(rr, r, "notexist.page.html", &models.TemplateData{})
 	if err == nil {
 		t.Fatal("rendered non existant template")
 	}
 }
 
 func TestNewTemplates(t *testing.T) {
-	NewTemplates(app)
+	NewRenderer(app)
 }
 
 func TestCreateTemplateCache(t *testing.T) {

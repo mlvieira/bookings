@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/mlvieira/bookings/internal/config"
+	"github.com/mlvieira/bookings/internal/driver"
 	"github.com/mlvieira/bookings/internal/helpers"
 	"github.com/mlvieira/bookings/internal/models"
 	"github.com/mlvieira/bookings/internal/render"
@@ -35,9 +36,16 @@ func getRoutes() http.Handler {
 	app.UseCache = app.InProduction
 	app.Port = ":8080"
 
-	repo := NewRepo(&app)
+	db, err := driver.ConnectSQL("dev:dev@/bookings")
+	if err != nil {
+		log.Fatal("Error conecting to the database")
+	}
+
+	log.Println("Connected to the database")
+
+	repo := NewRepo(&app, db)
 	NewHandlers(repo)
-	render.NewTemplates(&app)
+	render.NewRenderer(&app)
 	helpers.NewHelpers(&app)
 
 	mux := chi.NewRouter()

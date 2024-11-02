@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/gob"
 	"log"
 	"net/http"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/alexedwards/scs/v2"
+	"github.com/mlvieira/bookings/internal/models"
 )
 
 // AppConfig holds the application config
@@ -23,6 +25,11 @@ type AppConfig struct {
 
 // SetupAppConfig initializes the main application configuration
 func SetupAppConfig(inProduction bool) *AppConfig {
+
+	gob.Register(models.Reservation{})
+	gob.Register(models.User{})
+	gob.Register(models.Room{})
+	gob.Register(models.Restriction{})
 
 	app := AppConfig{
 		InProduction: inProduction,

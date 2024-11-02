@@ -7,10 +7,13 @@ import (
 	"net/http"
 
 	"github.com/mlvieira/bookings/internal/config"
+	"github.com/mlvieira/bookings/internal/driver"
 	"github.com/mlvieira/bookings/internal/forms"
 	"github.com/mlvieira/bookings/internal/helpers"
 	"github.com/mlvieira/bookings/internal/models"
 	"github.com/mlvieira/bookings/internal/render"
+	"github.com/mlvieira/bookings/internal/repository"
+	dbrepo "github.com/mlvieira/bookings/internal/repository/dbRepo"
 )
 
 // Repo the repository used by the handlers
@@ -19,12 +22,14 @@ var Repo *Repository
 // Repository is the repository type
 type Repository struct {
 	App *config.AppConfig
+	DB  repository.DatabaseRepo
 }
 
 // NewRepo creates a new repository
-func NewRepo(a *config.AppConfig) *Repository {
+func NewRepo(a *config.AppConfig, db *driver.DB) *Repository {
 	return &Repository{
 		App: a,
+		DB:  dbrepo.NewMysqlRepo(db.SQL, a),
 	}
 }
 
@@ -35,12 +40,12 @@ func NewHandlers(r *Repository) {
 
 // Landing handles the GET request for the landing page
 func (m *Repository) Landing(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, r, "landing.page.html", &models.TemplateData{})
+	render.Template(w, r, "landing.page.html", &models.TemplateData{})
 }
 
 // Contact handles the GET request for the contact page
 func (m *Repository) Contact(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, r, "contact.page.html", &models.TemplateData{})
+	render.Template(w, r, "contact.page.html", &models.TemplateData{})
 }
 
 // RoomMajors handles the GET request for Major's Suite room page
@@ -50,7 +55,7 @@ func (m *Repository) RoomMajors(w http.ResponseWriter, r *http.Request) {
 	stringMap["image_path"] = "/static/images/marjors-suite.png"
 	stringMap["room_url"] = "majors-suite"
 
-	render.RenderTemplate(w, r, "rooms.page.html", &models.TemplateData{
+	render.Template(w, r, "rooms.page.html", &models.TemplateData{
 		StringMap: stringMap,
 	})
 }
@@ -62,14 +67,14 @@ func (m *Repository) RoomGenerals(w http.ResponseWriter, r *http.Request) {
 	stringMap["image_path"] = "/static/images/generals-quarters.png"
 	stringMap["room_url"] = "generals-quarter"
 
-	render.RenderTemplate(w, r, "rooms.page.html", &models.TemplateData{
+	render.Template(w, r, "rooms.page.html", &models.TemplateData{
 		StringMap: stringMap,
 	})
 }
 
 // Availability handles the GET request for the availability page
 func (m *Repository) Availability(w http.ResponseWriter, r *http.Request) {
-	render.RenderTemplate(w, r, "availability.page.html", &models.TemplateData{})
+	render.Template(w, r, "availability.page.html", &models.TemplateData{})
 }
 
 // jsonResponse defines the structure of a JSON response with status and message
@@ -110,7 +115,7 @@ func (m *Repository) Booking(w http.ResponseWriter, r *http.Request) {
 
 	data["reservation"] = emptyReservation
 
-	render.RenderTemplate(w, r, "reservation.page.html", &models.TemplateData{
+	render.Template(w, r, "reservation.page.html", &models.TemplateData{
 		Form: forms.New(nil),
 		Data: data,
 	})
@@ -142,7 +147,7 @@ func (m *Repository) PostBooking(w http.ResponseWriter, r *http.Request) {
 		data := make(map[string]any)
 		data["reservation"] = reservation
 
-		render.RenderTemplate(w, r, "reservation.page.html", &models.TemplateData{
+		render.Template(w, r, "reservation.page.html", &models.TemplateData{
 			Form: form,
 			Data: data,
 		})
@@ -171,7 +176,7 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 	data := make(map[string]any)
 	data["reservation"] = reservation
 
-	render.RenderTemplate(w, r, "reservation-summary.page.html", &models.TemplateData{
+	render.Template(w, r, "reservation-summary.page.html", &models.TemplateData{
 		Data: data,
 	})
 }
@@ -185,7 +190,7 @@ func (m *Repository) About(w http.ResponseWriter, r *http.Request) {
 	remoteIP := m.App.Session.GetString(r.Context(), "remote_ip")
 	stringMap["remote_ip"] = remoteIP
 
-	render.RenderTemplate(w, r, "about.page.html", &models.TemplateData{
+	render.Template(w, r, "about.page.html", &models.TemplateData{
 		StringMap: stringMap,
 	})
 }
