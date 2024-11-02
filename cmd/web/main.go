@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/mlvieira/bookings/internal/config"
+	"github.com/mlvieira/bookings/internal/driver"
 	"github.com/mlvieira/bookings/internal/handlers"
 	"github.com/mlvieira/bookings/internal/helpers"
 	"github.com/mlvieira/bookings/internal/render"
@@ -16,10 +17,12 @@ var app config.AppConfig
 
 // main is the main logic
 func main() {
-	err := run()
+	db, err := run()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer db.SQL.Close()
 
 	fmt.Printf("Starting aplication on http://localhost%s\n", app.Port)
 
@@ -31,23 +34,31 @@ func main() {
 	log.Fatal(srv.ListenAndServe())
 }
 
-func run() error {
+func run() (*driver.DB, error) {
 
 	app = *config.SetupAppConfig(false)
 
 	tc, err := render.CreateTemplateCache()
 	if err != nil {
 		log.Fatal(err)
+		return nil, err
 	}
 
 	app.TemplateCache = tc
 	app.UseCache = app.InProduction
 	app.Port = ":8080"
 
-	repo := handlers.NewRepo(&app)
+	db, err := driver.ConnectSQL("dev:dev@/bookings")
+	if err != nil {
+		return nil, err
+	}
+
+	log.Println("Connected to the database")
+
+	repo := handlers.NewRepo(&app, db)
 	handlers.NewHandlers(repo)
-	render.NewTemplates(&app)
+	render.NewRenderer(&app)
 	helpers.NewHelpers(&app)
 
-	return nil
+	return db, nil
 }
