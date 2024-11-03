@@ -69,7 +69,7 @@ CREATE TABLE `room_restrictions` (
   `start_date` date NOT NULL,
   `end_date` date NOT NULL,
   `room_id` int(11) NOT NULL,
-  `reservation_id` int(11) NOT NULL,
+  `reservation_id` int(11) DEFAULT NULL,
   `restriction_id` int(11) NOT NULL,
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
@@ -144,4 +144,4 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-11-01 15:05:10
+-- Dump completed on 2024-11-03 13:30:28
