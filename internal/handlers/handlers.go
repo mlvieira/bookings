@@ -54,7 +54,7 @@ func (m *Repository) Contact(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) RoomMajors(w http.ResponseWriter, r *http.Request) {
 	stringMap := make(map[string]string)
 	stringMap["room_name"] = "Major's Suite"
-	stringMap["image_path"] = "/static/images/marjors-suite.png"
+	stringMap["image_path"] = "/static/images/majors-suite.png"
 	stringMap["room_url"] = "majors-suite"
 
 	render.Template(w, r, "rooms.page.html", &models.TemplateData{
