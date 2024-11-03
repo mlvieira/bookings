@@ -26,6 +26,7 @@ const drawDatePicker = (elem = document, removeDisable = true) => {
 		format: 'mm-dd-yyyy',
 		todayHighlight: true,
 		clearButton: true,
+		minDate: new Date(),
 		buttonClass: 'btn',
 		container: formBooking
 
