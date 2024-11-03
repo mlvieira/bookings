@@ -145,7 +145,7 @@ func (m *mysqlDBRepo) SearchAvailabilityForAllRooms(start, end time.Time) ([]mod
 
 	for rows.Next() {
 		var room models.Room
-		err := rows.Scan(&room.ID, &room.RoomName)
+		err := rows.Scan(&room.ID, &room.RoomName, &room.RoomDescription, &room.RoomURL)
 		if err != nil {
 			return rooms, err
 		}
