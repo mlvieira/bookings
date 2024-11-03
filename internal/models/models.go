@@ -46,13 +46,13 @@ type Reservation struct {
 }
 
 // RoomRestriction create struct for handling room restriction data
-type RoomRestrictions struct {
+type RoomRestriction struct {
 	ID            int
 	StartDate     time.Time
 	EndDate       time.Time
 	RoomID        int
 	ReservationID int
-	RestrictionOD int
+	RestrictionID int
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	Room          Room
