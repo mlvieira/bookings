@@ -94,6 +94,8 @@ DROP TABLE IF EXISTS `rooms`;
 CREATE TABLE `rooms` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `room_name` varchar(255) NOT NULL DEFAULT '',
+  `room_description` varchar(255) NOT NULL,
+  `room_url` varchar(255) NOT NULL,
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
   PRIMARY KEY (`id`)
@@ -144,4 +146,4 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-11-03 13:30:28
+-- Dump completed on 2024-11-03 15:40:07

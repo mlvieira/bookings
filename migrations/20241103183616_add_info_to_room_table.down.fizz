@@ -1,0 +1,2 @@
+drop_column("rooms", "room_description")
+drop_column("rooms", "room_url")

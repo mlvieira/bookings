@@ -16,10 +16,12 @@ type User struct {
 
 // Room create struct for handling room data
 type Room struct {
-	ID        int
-	RoomName  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID              int
+	RoomName        string
+	RoomDescription string
+	RoomURL         string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // Restriction create struct for handling restriction data

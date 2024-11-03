@@ -1,0 +1,2 @@
+add_column("rooms", "room_description", "string", {"after": "room_name"})
+add_column("rooms", "room_url", "string", {"after": "room_description"})

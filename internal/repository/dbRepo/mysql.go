@@ -119,6 +119,8 @@ func (m *mysqlDBRepo) SearchAvailabilityForAllRooms(start, end time.Time) ([]mod
 				SELECT
 					r.id
 					, r.room_name
+					, r.room_description
+					, r.room_url
 				FROM
 					rooms r
 				WHERE
