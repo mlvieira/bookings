@@ -3,13 +3,23 @@
 <div class="container">
     <div class="row">
         <div class="col">
+            {{$res := index .Data "reservation"}}
             <h1 class="mt-4 text-center">Make Reservation</h1>
+            <p><strong>Reservation Details</strong><br/>
+                Room: {{$res.Room.RoomName}}<br/>
+                Arrival: {{index .StringMap "start_date"}}
+                <br/>
+                Departure: {{index .StringMap "end_date"}}
+            </p>
         </div>
     </div>
 
     {{$res := index .Data "reservation"}}
     <form action="/book" method="POST" class="needs-validation row g-3" novalidate>
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <input type="hidden" name="start_date" value="{{index .StringMap "start_date"}}">
+        <input type="hidden" name="end_date" value="{{index .StringMap "end_date"}}">
+        <input type="hidden" name="room_id" class="form-control" value="{{$res.RoomID}}">
         <div class="col-md-6">
             <label for="first_name" class="form-label">First Name</label>
             {{with .Form.Errors.Get "first_name"}}

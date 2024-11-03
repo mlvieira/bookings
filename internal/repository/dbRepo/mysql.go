@@ -160,3 +160,32 @@ func (m *mysqlDBRepo) SearchAvailabilityForAllRooms(start, end time.Time) ([]mod
 	return rooms, nil
 
 }
+
+// GetRoomByID gets a room by id
+func (m *mysqlDBRepo) GetRoomByID(id int) (models.Room, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var room models.Room
+
+	stmt, err := m.DB.Prepare(`
+				SELECT
+					id
+					, room_name
+				FROM
+					rooms
+				WHERE
+					id = ?
+			`)
+	if err != nil {
+		return room, err
+	}
+
+	row := stmt.QueryRowContext(ctx, id)
+	err = row.Scan(&room.ID, &room.RoomName)
+	if err != nil {
+		return room, err
+	}
+
+	return room, nil
+}
