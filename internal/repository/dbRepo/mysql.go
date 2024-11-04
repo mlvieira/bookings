@@ -12,7 +12,12 @@ func (m *mysqlDBRepo) InsertReservation(res models.Reservation) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	stmt, err := m.DB.Prepare(`
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return 0, err
+	}
+
+	stmt, err := tx.Prepare(`
 				INSERT INTO
 					reservations 
 					(first_name, last_name, email, phone, start_date,
@@ -21,6 +26,7 @@ func (m *mysqlDBRepo) InsertReservation(res models.Reservation) (int, error) {
 					(?, ?, ?, ?, ?, ?, ?, ?, ?)
 				`)
 	if err != nil {
+		tx.Rollback()
 		return 0, err
 	}
 
@@ -38,6 +44,11 @@ func (m *mysqlDBRepo) InsertReservation(res models.Reservation) (int, error) {
 		time.Now(),
 	)
 	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	if err = tx.Commit(); err != nil {
 		return 0, err
 	}
 
@@ -51,7 +62,12 @@ func (m *mysqlDBRepo) InsertRoomRestriction(res models.RoomRestriction) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	stmt, err := m.DB.Prepare(`
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
 				INSERT INTO
 					room_restrictions
 					(start_date, end_date, room_id, reservation_id, created_at, updated_at, restriction_id)
@@ -59,6 +75,7 @@ func (m *mysqlDBRepo) InsertRoomRestriction(res models.RoomRestriction) error {
 					(?, ?, ?, ?, ?, ?, ?)
 				`)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -74,6 +91,11 @@ func (m *mysqlDBRepo) InsertRoomRestriction(res models.RoomRestriction) error {
 		res.RestrictionID,
 	)
 	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
 		return err
 	}
 
