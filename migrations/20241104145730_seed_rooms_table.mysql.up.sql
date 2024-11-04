@@ -1,0 +1,3 @@
+INSERT INTO rooms (room_name,room_description,room_url,created_at,updated_at) VALUES
+	 ('General''s Quarters','Lorem ipsum dolor sit amet consectetur, adipisicing elit. Modi eveniet quibusdam quam eligendi! Non eum repellendus dolorum ducimus dicta quidem, sed ad deserunt fuga illum soluta blanditiis, aut iure itaque!','generals-quarters','2024-01-01 00:00:00.000','2024-01-01 00:00:00.000'),
+	 ('Major''s Suite','Lorem ipsum dolor sit amet consectetur, adipisicing elit. Modi eveniet quibusdam quam eligendi! Non eum repellendus dolorum ducimus dicta quidem, sed ad deserunt fuga illum soluta blanditiis, aut iure itaque!','majors-suite','2024-01-01 00:00:00.000','2024-01-01 00:00:00.000');
