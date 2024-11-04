@@ -50,27 +50,19 @@ func (m *Repository) Contact(w http.ResponseWriter, r *http.Request) {
 	render.Template(w, r, "contact.page.html", &models.TemplateData{})
 }
 
-// RoomMajors handles the GET request for Major's Suite room page
-func (m *Repository) RoomMajors(w http.ResponseWriter, r *http.Request) {
-	stringMap := make(map[string]string)
-	stringMap["room_name"] = "Major's Suite"
-	stringMap["image_path"] = "/static/images/majors-suite.png"
-	stringMap["room_url"] = "majors-suite"
+// RoomsPage handles the GET request for individual room page
+func (m *Repository) RoomsPage(w http.ResponseWriter, r *http.Request) {
+	room, err := m.DB.GetRoomByUrl(chi.URLParam(r, "room"))
+	if err != nil {
+		helpers.ClientError(w, http.StatusNotFound)
+		return
+	}
+
+	data := make(map[string]any)
+	data["room"] = room
 
 	render.Template(w, r, "rooms.page.html", &models.TemplateData{
-		StringMap: stringMap,
-	})
-}
-
-// RoomGenerals handles the GET request for General's Quarters room page
-func (m *Repository) RoomGenerals(w http.ResponseWriter, r *http.Request) {
-	stringMap := make(map[string]string)
-	stringMap["room_name"] = "General's quarter"
-	stringMap["image_path"] = "/static/images/generals-quarters.png"
-	stringMap["room_url"] = "generals-quarter"
-
-	render.Template(w, r, "rooms.page.html", &models.TemplateData{
-		StringMap: stringMap,
+		Data: data,
 	})
 }
 
@@ -87,10 +79,65 @@ type jsonResponse struct {
 
 // AvailabilityJSON handles the POST request and returns a JSON response
 func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
-	resp := jsonResponse{
-		OK:      true,
-		Message: "Available",
+	err := r.ParseForm()
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
 	}
+
+	sd := r.FormValue("start_date")
+	ed := r.FormValue("end_date")
+	if sd == "" || ed == "" {
+		helpers.ServerError(w, errors.New("data cannot be empty"))
+		return
+	}
+
+	layout := "01-02-2006"
+
+	startDate, err := time.Parse(layout, sd)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	endDate, err := time.Parse(layout, ed)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	roomID, err := strconv.Atoi(r.FormValue("room_id"))
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	available, err := m.DB.SearchAvailabilityByDatesByRoomID(startDate, endDate, roomID)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	var msg string
+
+	if available {
+		msg = "Available"
+	} else {
+		msg = "Unavailable"
+	}
+
+	resp := jsonResponse{
+		OK:      available,
+		Message: msg,
+	}
+
+	res := models.Reservation{
+		StartDate: startDate,
+		EndDate:   endDate,
+		RoomID:    roomID,
+	}
+
+	m.App.Session.Put(r.Context(), "reservation", res)
 
 	out, err := json.Marshal(resp)
 	if err != nil {

@@ -164,7 +164,11 @@ const roomAvailability = () => {
 				const form = modalContent.querySelector('#availability-form');
 				form.addEventListener('submit', async (e) => {
 					e.preventDefault();
+					const room_id = document.getElementById('room-id');
+					if (!room_id) return;
+
 					const formData = new FormData(form);
+					formData.append("room_id", room_id.dataset.roomId);
 
 					try {
 						const response = await fetch('/availability/json', {
@@ -182,7 +186,14 @@ const roomAvailability = () => {
 						const data = await response.json();
 
 						if (data.ok) {
-							alert.success({ msg: data.message });
+							alert.custom({
+								icon: "success",
+								title: data.message,
+								msg: `<a href="/book" class="btn btn-primary">Book Now</a>`,
+								showCancelButton: false,
+								showConfirmButton: false,
+								allowOutsideClick: true,
+							});
 						} else {
 							alert.error({ msg: data.message });
 						}

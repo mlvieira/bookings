@@ -1,0 +1,1 @@
+drop_index("rooms", "rooms_room_url_idx")

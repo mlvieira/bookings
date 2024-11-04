@@ -219,3 +219,36 @@ func (m *mysqlDBRepo) GetRoomByID(id int) (models.Room, error) {
 
 	return room, nil
 }
+
+// GetRoomByURL gets a room by url path
+func (m *mysqlDBRepo) GetRoomByUrl(url string) (models.Room, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var room models.Room
+
+	stmt, err := m.DB.Prepare(`
+				SELECT
+					id
+					, room_name
+					, room_description
+					, room_url
+				FROM
+					rooms
+				WHERE
+					room_url = ?
+			`)
+	if err != nil {
+		return room, err
+	}
+
+	defer stmt.Close()
+
+	row := stmt.QueryRowContext(ctx, url)
+	err = row.Scan(&room.ID, &room.RoomName, &room.RoomDescription, &room.RoomURL)
+	if err != nil {
+		return room, err
+	}
+
+	return room, nil
+}
