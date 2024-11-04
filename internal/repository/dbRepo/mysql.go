@@ -24,7 +24,7 @@ func (m *mysqlDBRepo) InsertReservation(res models.Reservation) (int, error) {
 		return 0, err
 	}
 
-	//defer stmt.Close()
+	defer stmt.Close()
 
 	ret, err := stmt.ExecContext(ctx,
 		res.FirstName,
@@ -62,6 +62,8 @@ func (m *mysqlDBRepo) InsertRoomRestriction(res models.RoomRestriction) error {
 		return err
 	}
 
+	defer stmt.Close()
+
 	_, err = stmt.ExecContext(ctx,
 		res.StartDate,
 		res.EndDate,
@@ -98,6 +100,8 @@ func (m *mysqlDBRepo) SearchAvailabilityByDatesByRoomID(start, end time.Time, ro
 	if err != nil {
 		return false, err
 	}
+
+	defer stmt.Close()
 
 	row := stmt.QueryRowContext(ctx, roomID, start, end)
 	err = row.Scan(&numRows)
@@ -137,6 +141,8 @@ func (m *mysqlDBRepo) SearchAvailabilityForAllRooms(start, end time.Time) ([]mod
 	if err != nil {
 		return rooms, err
 	}
+
+	defer stmt.Close()
 
 	rows, err := stmt.QueryContext(ctx, start, end)
 	if err != nil {
@@ -180,6 +186,8 @@ func (m *mysqlDBRepo) GetRoomByID(id int) (models.Room, error) {
 	if err != nil {
 		return room, err
 	}
+
+	defer stmt.Close()
 
 	row := stmt.QueryRowContext(ctx, id)
 	err = row.Scan(&room.ID, &room.RoomName)
