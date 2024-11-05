@@ -81,40 +81,46 @@ type jsonResponse struct {
 func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		helpers.ServerError(w, err)
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Internal server error",
+		}
+		out, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
 		return
 	}
 
 	sd := r.FormValue("start_date")
 	ed := r.FormValue("end_date")
 	if sd == "" || ed == "" {
-		helpers.ServerError(w, errors.New("data cannot be empty"))
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Dates cannot be empty",
+		}
+		out, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
 		return
 	}
 
 	layout := "01-02-2006"
 
-	startDate, err := time.Parse(layout, sd)
-	if err != nil {
-		helpers.ServerError(w, err)
-		return
-	}
+	startDate, _ := time.Parse(layout, sd)
 
-	endDate, err := time.Parse(layout, ed)
-	if err != nil {
-		helpers.ServerError(w, err)
-		return
-	}
+	endDate, _ := time.Parse(layout, ed)
 
-	roomID, err := strconv.Atoi(r.FormValue("room_id"))
-	if err != nil {
-		helpers.ServerError(w, err)
-		return
-	}
+	roomID, _ := strconv.Atoi(r.FormValue("room_id"))
 
 	available, err := m.DB.SearchAvailabilityByDatesByRoomID(startDate, endDate, roomID)
 	if err != nil {
-		helpers.ServerError(w, err)
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Error searching in the database",
+		}
+		out, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
 		return
 	}
 
@@ -139,11 +145,7 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 
 	m.App.Session.Put(r.Context(), "reservation", res)
 
-	out, err := json.Marshal(resp)
-	if err != nil {
-		helpers.ServerError(w, err)
-		return
-	}
+	out, _ := json.Marshal(resp)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
@@ -214,7 +216,6 @@ func (m *Repository) Booking(w http.ResponseWriter, r *http.Request) {
 	res, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
 	if !ok {
 		err := errors.New("can't get reservation from session")
-		helpers.ServerError(w, err)
 		m.App.Session.Put(r.Context(), "error", err)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
@@ -222,7 +223,9 @@ func (m *Repository) Booking(w http.ResponseWriter, r *http.Request) {
 
 	room, err := m.DB.GetRoomByID(res.RoomID)
 	if err != nil {
-		helpers.ServerError(w, err)
+		err := errors.New("can't find room")
+		m.App.Session.Put(r.Context(), "error", err)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -251,13 +254,17 @@ func (m *Repository) Booking(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) PostBooking(w http.ResponseWriter, r *http.Request) {
 	reservation, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
 	if !ok {
-		helpers.ServerError(w, errors.New("can't get reservation from session"))
+		err := errors.New("can't get reservation from session")
+		m.App.Session.Put(r.Context(), "error", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
 	err := r.ParseForm()
 	if err != nil {
-		helpers.ServerError(w, err)
+		err := errors.New("can't parse form")
+		m.App.Session.Put(r.Context(), "error", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -276,6 +283,7 @@ func (m *Repository) PostBooking(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := make(map[string]any)
 		data["reservation"] = reservation
+		http.Error(w, "error", http.StatusSeeOther)
 
 		render.Template(w, r, "reservation.page.html", &models.TemplateData{
 			Form: form,
@@ -287,7 +295,9 @@ func (m *Repository) PostBooking(w http.ResponseWriter, r *http.Request) {
 
 	lastID, err := m.DB.InsertReservation(reservation)
 	if err != nil {
-		helpers.ServerError(w, err)
+		err := errors.New("can't insert reservation in the database")
+		m.App.Session.Put(r.Context(), "error", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -301,7 +311,9 @@ func (m *Repository) PostBooking(w http.ResponseWriter, r *http.Request) {
 
 	err = m.DB.InsertRoomRestriction(restriction)
 	if err != nil {
-		helpers.ServerError(w, err)
+		err := errors.New("can't insert room restriction in the database")
+		m.App.Session.Put(r.Context(), "error", err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 

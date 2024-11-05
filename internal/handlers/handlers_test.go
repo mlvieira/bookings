@@ -1,107 +1,297 @@
 package handlers
 
 import (
+	"context"
+	"encoding/json"
+	"io"
+	"log"
 	"net/http"
-	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
+
+	"github.com/mlvieira/bookings/internal/driver"
+	"github.com/mlvieira/bookings/internal/models"
 )
 
-type postData struct {
-	key   string
-	value string
+func mockDB() *driver.DB {
+	return &driver.DB{
+		SQL: nil,
+	}
+}
+
+func getCtx(req *http.Request) context.Context {
+	ctx, err := app.Session.Load(req.Context(), req.Header.Get("X-Session"))
+	if err != nil {
+		log.Println(err)
+	}
+
+	return ctx
+}
+
+func createTestReservation(roomID int, roomName string) models.Reservation {
+	return models.Reservation{
+		RoomID: roomID,
+		Room: models.Room{
+			ID:              roomID,
+			RoomName:        roomName,
+			RoomDescription: "Test",
+			RoomURL:         "test-url",
+		},
+	}
+}
+
+func TestNewRepo(t *testing.T) {
+	db := mockDB()
+	testRepo := NewRepo(&app, db)
+
+	if testRepo.App != Repo.App {
+		t.Errorf("expected app config to be %v, got %v", Repo.App, testRepo.App)
+	}
+
+	if testRepo.DB == nil {
+		t.Error("expected DB repo to be initialized, got nil")
+	}
+
 }
 
 type testsDataType struct {
 	name               string
 	url                string
-	method             string
-	params             []postData
 	expectedStatusCode int
 }
 
 var testsData = []testsDataType{
-	{"home", "/", "GET", []postData{}, http.StatusOK},
-	{"about", "/about", "GET", []postData{}, http.StatusOK},
-	{"generalsquarters", "/rooms/generals-quarter", "GET", []postData{}, http.StatusOK},
-	{"majorssuite", "/rooms/majors-suite", "GET", []postData{}, http.StatusOK},
-	{"contact", "/contact", "GET", []postData{}, http.StatusOK},
-	{"availabilityGET", "/availability", "GET", []postData{}, http.StatusOK},
-	{"bookingGET", "/book", "GET", []postData{}, http.StatusOK},
-	{"bookingsummary", "/book/summary", "GET", []postData{}, http.StatusInternalServerError},
-
-	{"availabilityPOST", "/availability", "POST", []postData{
-		{key: "start_date", value: "02-02-2000"},
-		{key: "end_date", value: "02-04-2000"},
-	}, http.StatusOK},
-	{"availabilityPOSTJSON", "/availability/json", "POST", []postData{
-		{key: "start_date", value: "02-02-2000"},
-		{key: "end_date", value: "02-04-2000"},
-	}, http.StatusOK},
-	{"bookingPOST", "/book", "POST", []postData{
-		{key: "first_name", value: "John"},
-		{key: "last_name", value: "Doe"},
-		{key: "email", value: "john@example.com"},
-		{key: "phone", value: "5555555555"},
-	}, http.StatusOK},
-
-	{"notfound", "/a", "GET", []postData{}, http.StatusNotFound},
+	{"Valid Home", "/", http.StatusOK},
+	{"Valid About", "/about", http.StatusOK},
+	{"Valid Room Page", "/rooms/majors-suite", http.StatusOK},
+	{"Valid Contact", "/contact", http.StatusOK},
+	{"Valid Availability GET", "/availability", http.StatusOK},
+	{"Page not found", "/a", http.StatusNotFound},
+	{"Room not found", "/rooms/a", http.StatusNotFound},
 }
 
 func TestHandlers(t *testing.T) {
+	getRequest := func(t *testing.T, ts *httptest.Server, test testsDataType) {
+		res, err := ts.Client().Get(ts.URL + test.url)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if res.StatusCode != test.expectedStatusCode {
+			t.Errorf("%s handler returned wrong status code: got %v want %v", test.url, res.StatusCode, test.expectedStatusCode)
+		}
+	}
+
 	routes := getRoutes()
-
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	client := &http.Client{
-		Jar: jar,
-	}
-
 	ts := httptest.NewTLSServer(routes)
 
 	defer ts.Close()
 
-	client.Transport = &http.Transport{
-		TLSClientConfig: ts.Client().Transport.(*http.Transport).TLSClientConfig,
-	}
-
 	for _, test := range testsData {
-		if test.method == "GET" {
-			getRequest(client, ts.URL, test, t)
-		} else {
-			postRequest(client, ts.URL, test, t)
+		t.Run(test.name, func(t *testing.T) {
+			getRequest(t, ts, test)
+		})
+	}
+}
+
+func TestRepository_Booking(t *testing.T) {
+	executeBookingTest := func(
+		t *testing.T,
+		useSession bool,
+		expectedCode int,
+		expectedLocation string,
+		reservation models.Reservation,
+	) {
+		req, err := http.NewRequest("GET", "/book", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+
+		if useSession {
+			app.Session.Put(ctx, "reservation", reservation)
+		}
+
+		rr := httptest.NewRecorder()
+
+		handler := http.HandlerFunc(Repo.Booking)
+		handler.ServeHTTP(rr, req)
+		app.Session.Destroy(req.Context())
+
+		const errMessage = "Handler returned wrong response code: got %d, wanted %d"
+		if rr.Code != expectedCode {
+			t.Errorf(errMessage, rr.Code, expectedCode)
+		}
+
+		if expectedLocation != "" {
+			location := rr.Header().Get("Location")
+			if location != expectedLocation {
+				t.Errorf("Handler redirected to wrong URL: got %s, wanted %s", location, expectedLocation)
+			}
 		}
 	}
+
+	t.Run("Valid request", func(t *testing.T) {
+		executeBookingTest(t, true, http.StatusOK, "", createTestReservation(1, "test"))
+	})
+
+	t.Run("Missing session", func(t *testing.T) {
+		executeBookingTest(t, false, http.StatusTemporaryRedirect, "/", createTestReservation(1, "test"))
+	})
+
+	t.Run("Nonexistent room ID", func(t *testing.T) {
+		executeBookingTest(t, true, http.StatusTemporaryRedirect, "/", createTestReservation(3, "test"))
+	})
 }
 
-func getRequest(client *http.Client, baseUrl string, test testsDataType, t *testing.T) {
-	res, err := client.Get(baseUrl + test.url)
-	if err != nil {
-		t.Fatal(err)
+func TestRepository_PostBooking(t *testing.T) {
+	executePostBookingTest := func(
+		t *testing.T,
+		useForm,
+		useSession bool,
+		expectedCode int,
+		expectedLocation string,
+		form url.Values,
+		reservation models.Reservation,
+	) {
+		var body io.Reader = nil
+		if useForm {
+			body = strings.NewReader(form.Encode())
+		}
+
+		req, err := http.NewRequest("POST", "/book", body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+
+		if useSession {
+			app.Session.Put(ctx, "reservation", reservation)
+		}
+
+		rr := httptest.NewRecorder()
+
+		handler := http.HandlerFunc(Repo.PostBooking)
+		handler.ServeHTTP(rr, req)
+		app.Session.Destroy(req.Context())
+
+		const errMessage = "Handler returned wrong response code: got %d, wanted %d"
+		if rr.Code != expectedCode {
+			t.Errorf(errMessage, rr.Code, expectedCode)
+		}
+
+		if expectedLocation != "" {
+			location := rr.Header().Get("Location")
+			if location != expectedLocation {
+				t.Errorf("Handler redirected to wrong URL: got %s, wanted %s", location, expectedLocation)
+			}
+		}
 	}
 
-	if res.StatusCode != test.expectedStatusCode {
-		t.Errorf("%s handler returned wrong status code: got %v want %v", test.url, res.StatusCode, test.expectedStatusCode)
-	}
+	t.Run("Valid form", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("first_name", "John")
+		form.Add("last_name", "Doe")
+		form.Add("email", "john@example.com")
+		form.Add("phone", "55555555")
+		executePostBookingTest(t, true, true, http.StatusSeeOther, "/book/summary", form, createTestReservation(1, "test"))
+	})
+
+	t.Run("Missing session", func(t *testing.T) {
+		executePostBookingTest(t, false, false, http.StatusSeeOther, "/", nil, models.Reservation{})
+	})
+
+	t.Run("Invalid form", func(t *testing.T) {
+		executePostBookingTest(t, false, true, http.StatusSeeOther, "/", nil, createTestReservation(1, "test"))
+	})
+
+	t.Run("Invalid email", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("first_name", "John")
+		form.Add("last_name", "Doe")
+		form.Add("email", "john@example")
+		form.Add("phone", "55555555")
+		executePostBookingTest(t, true, true, http.StatusSeeOther, "", form, createTestReservation(1, "test"))
+	})
+
+	t.Run("Database error: InsertReservation", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("first_name", "John")
+		form.Add("last_name", "Doe")
+		form.Add("email", "john@at.com")
+		form.Add("phone", "55555555")
+		executePostBookingTest(t, true, true, http.StatusSeeOther, "/", form, createTestReservation(1, "test"))
+	})
+
+	t.Run("Database error: InsertRoomRestriction", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("first_name", "John")
+		form.Add("last_name", "Doe")
+		form.Add("email", "john@example.com")
+		form.Add("phone", "55555555")
+		executePostBookingTest(t, true, true, http.StatusSeeOther, "/", form, createTestReservation(404, "test"))
+	})
 }
 
-func postRequest(client *http.Client, baseUrl string, test testsDataType, t *testing.T) {
-	values := url.Values{}
+func TestRepository_AvailabilityJSON(t *testing.T) {
+	executeAvailabilityJSONTest := func(t *testing.T, useForm bool, expectedOK bool, expectedMessage string, startDate, endDate, roomID string) {
+		var body io.Reader = nil
+		if useForm {
+			form := url.Values{}
+			form.Add("start_date", startDate)
+			form.Add("end_date", endDate)
+			form.Add("room_id", roomID)
+			body = strings.NewReader(form.Encode())
+		}
 
-	for _, param := range test.params {
-		values.Add(param.key, param.value)
+		req, err := http.NewRequest("POST", "/availability/json", body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+		rr := httptest.NewRecorder()
+
+		handler := http.HandlerFunc(Repo.AvailabilityJSON)
+		handler.ServeHTTP(rr, req)
+
+		var j jsonResponse
+		err = json.Unmarshal(rr.Body.Bytes(), &j)
+		if err != nil {
+			t.Error("failed parsing json")
+		}
+
+		if j.OK != expectedOK && j.Message != expectedMessage {
+			t.Errorf("Expected OK: %v, Message: '%s', got OK: %v, Message: '%s'", expectedOK, expectedMessage, j.OK, j.Message)
+		}
 	}
 
-	res, err := client.PostForm(baseUrl+test.url, values)
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Run("Invalid Form", func(t *testing.T) {
+		executeAvailabilityJSONTest(t, false, false, "Internal server error", "", "", "")
+	})
 
-	if res.StatusCode != test.expectedStatusCode {
-		t.Errorf("%s handler returned wrong status code: got %v want %v", test.url, res.StatusCode, test.expectedStatusCode)
-	}
+	t.Run("Empty Start Date", func(t *testing.T) {
+		executeAvailabilityJSONTest(t, true, false, "Dates cannot be empty", "", "05-16-2050", "")
+	})
+
+	t.Run("Database Error", func(t *testing.T) {
+		executeAvailabilityJSONTest(t, true, false, "Error searching in the database", "05-15-2050", "05-16-2050", "404")
+	})
+
+	t.Run("Room Unavailable", func(t *testing.T) {
+		executeAvailabilityJSONTest(t, true, false, "Unavailable", "05-10-2050", "05-16-2050", "1")
+	})
+
+	t.Run("Room Available", func(t *testing.T) {
+		executeAvailabilityJSONTest(t, true, true, "Available", "12-17-2050", "12-18-2050", "1")
+	})
 }

@@ -5,20 +5,21 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"testing"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/mlvieira/bookings/internal/config"
-	"github.com/mlvieira/bookings/internal/driver"
 	"github.com/mlvieira/bookings/internal/helpers"
 	"github.com/mlvieira/bookings/internal/models"
 	"github.com/mlvieira/bookings/internal/render"
+	dbrepo "github.com/mlvieira/bookings/internal/repository/dbRepo"
 )
 
 var app config.AppConfig
 
-func getRoutes() http.Handler {
+func TestMain(m *testing.M) {
 	if err := os.Chdir("../.."); err != nil {
 		log.Fatal("Could not change working directory:", err)
 	}
@@ -36,18 +37,15 @@ func getRoutes() http.Handler {
 	app.UseCache = app.InProduction
 	app.Port = ":8080"
 
-	db, err := driver.ConnectSQL("dev:dev@/bookings")
-	if err != nil {
-		log.Fatal("Error conecting to the database")
-	}
-
-	log.Println("Connected to the database")
-
-	repo := NewRepo(&app, db)
+	repo := newTestRepo(&app)
 	NewHandlers(repo)
 	render.NewRenderer(&app)
 	helpers.NewHelpers(&app)
 
+	os.Exit(m.Run())
+}
+
+func getRoutes() http.Handler {
 	mux := chi.NewRouter()
 
 	mux.Use(middleware.Recoverer)
@@ -56,8 +54,8 @@ func getRoutes() http.Handler {
 	mux.Get("/", Repo.Landing)
 	mux.Get("/about", Repo.About)
 	mux.Get("/contact", Repo.Contact)
-	mux.Get("/rooms/majors-suite", Repo.RoomMajors)
-	mux.Get("/rooms/generals-quarter", Repo.RoomGenerals)
+	mux.Get("/rooms/{room}", Repo.RoomsPage)
+	mux.Get("/rooms/book/{id}", Repo.ChooseRoom)
 	mux.Get("/availability", Repo.Availability)
 	mux.Post("/availability", Repo.PostAvailability)
 	mux.Post("/availability/json", Repo.AvailabilityJSON)
@@ -74,4 +72,11 @@ func getRoutes() http.Handler {
 // sessionLoad loads and saves the session on every request
 func sessionLoad(session *scs.SessionManager) func(http.Handler) http.Handler {
 	return session.LoadAndSave
+}
+
+func newTestRepo(a *config.AppConfig) *Repository {
+	return &Repository{
+		App: a,
+		DB:  dbrepo.NewTestRepo(a),
+	}
 }
