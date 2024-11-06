@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/mlvieira/bookings/internal/driver"
 	"github.com/mlvieira/bookings/internal/models"
 )
@@ -286,5 +288,174 @@ func TestRepository_AvailabilityJSON(t *testing.T) {
 
 	t.Run("Room Available", func(t *testing.T) {
 		executeAvailabilityJSONTest(t, true, true, "Available", "12-17-2050", "12-18-2050", "1")
+	})
+}
+
+func TestRepository_PostAvailability(t *testing.T) {
+	execPostAvailability := func(
+		t *testing.T,
+		useForm bool,
+		expectedCode int,
+		expectedLocation string,
+		form url.Values,
+	) {
+		var body io.Reader = nil
+		if useForm {
+			body = strings.NewReader(form.Encode())
+		}
+
+		req, err := http.NewRequest("POST", "/availability", body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+
+		rr := httptest.NewRecorder()
+
+		handler := http.HandlerFunc(Repo.PostAvailability)
+		handler.ServeHTTP(rr, req)
+		app.Session.Destroy(req.Context())
+
+		const errMessage = "Handler returned wrong response code: got %d, wanted %d"
+		if rr.Code != expectedCode {
+			t.Errorf(errMessage, rr.Code, expectedCode)
+		}
+
+		if expectedLocation != "" {
+			location := rr.Header().Get("Location")
+			if location != expectedLocation {
+				t.Errorf("Handler redirected to wrong URL: got %s, wanted %s", location, expectedLocation)
+			}
+		}
+	}
+
+	t.Run("Valid request", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("start_date", "12-17-2049")
+		form.Add("end_date", "12-20-2049")
+		execPostAvailability(t, true, http.StatusOK, "", form)
+	})
+
+	t.Run("Invalid Form", func(t *testing.T) {
+		execPostAvailability(t, false, http.StatusSeeOther, "/availability", nil)
+	})
+
+	t.Run("Empty Start Date", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("start_date", "12-17-2049")
+		execPostAvailability(t, true, http.StatusSeeOther, "/availability", form)
+	})
+
+	t.Run("Invalid Start Date", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("start_date", "2050-02-01")
+		form.Add("end_date", "12-20-2049")
+		execPostAvailability(t, true, http.StatusSeeOther, "/availability", form)
+	})
+
+	t.Run("Invalid End Date", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("start_date", "12-20-2049")
+		form.Add("end_date", "2050-02-01")
+		execPostAvailability(t, true, http.StatusSeeOther, "/availability", form)
+	})
+
+	t.Run("Database Error: Error searching DB", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("start_date", "12-17-2050")
+		form.Add("end_date", "12-20-2050")
+		execPostAvailability(t, true, http.StatusSeeOther, "/availability", form)
+	})
+
+	t.Run("No room available", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("start_date", "12-18-2050")
+		form.Add("end_date", "12-18-2050")
+		execPostAvailability(t, true, http.StatusSeeOther, "/availability", form)
+	})
+}
+
+func TestRepository_ReservationSummary(t *testing.T) {
+	executeBookingTest := func(
+		t *testing.T,
+		useSession bool,
+		expectedCode int,
+		expectedLocation string,
+		reservation models.Reservation,
+	) {
+		req, err := http.NewRequest("GET", "/book/summary", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		handleBookingRequest(t, req, useSession, expectedCode, expectedLocation, reservation, http.HandlerFunc(Repo.ReservationSummary))
+	}
+
+	t.Run("Valid request", func(t *testing.T) {
+		executeBookingTest(t, true, http.StatusOK, "", createTestReservation(1, "test"))
+	})
+
+	t.Run("Missing session", func(t *testing.T) {
+		executeBookingTest(t, false, http.StatusTemporaryRedirect, "/", createTestReservation(1, "test"))
+	})
+}
+
+func TestRepository_ChooseRoom(t *testing.T) {
+	executeBookingTest := func(
+		t *testing.T,
+		useSession bool,
+		expectedCode int,
+		expectedLocation,
+		roomID string,
+		reservation models.Reservation,
+	) {
+		req, err := http.NewRequest("GET", fmt.Sprintf("/rooms/book/%s", roomID), nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", roomID)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+
+		if useSession {
+			app.Session.Put(ctx, "reservation", reservation)
+		}
+
+		rr := httptest.NewRecorder()
+
+		handler := http.HandlerFunc(Repo.ChooseRoom)
+		handler.ServeHTTP(rr, req)
+		app.Session.Destroy(req.Context())
+
+		const errMessage = "Handler returned wrong response code: got %d, wanted %d"
+		if rr.Code != expectedCode {
+			t.Errorf(errMessage, rr.Code, expectedCode)
+		}
+
+		if expectedLocation != "" {
+			location := rr.Header().Get("Location")
+			if location != expectedLocation {
+				t.Errorf("Handler redirected to wrong URL: got %s, wanted %s", location, expectedLocation)
+			}
+		}
+	}
+
+	t.Run("Valid request", func(t *testing.T) {
+		executeBookingTest(t, true, http.StatusSeeOther, "/book", "1", createTestReservation(1, "test"))
+	})
+
+	t.Run("Invalid RoomID in path", func(t *testing.T) {
+		executeBookingTest(t, true, http.StatusTemporaryRedirect, "/", "err", models.Reservation{})
+	})
+
+	t.Run("Missing session", func(t *testing.T) {
+		executeBookingTest(t, false, http.StatusTemporaryRedirect, "/", "1", models.Reservation{})
 	})
 }
