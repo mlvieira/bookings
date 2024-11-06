@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -42,6 +43,40 @@ func createTestReservation(roomID int, roomName string) models.Reservation {
 	}
 }
 
+func handleBookingRequest(
+	t *testing.T,
+	req *http.Request,
+	useSession bool,
+	expectedCode int,
+	expectedLocation string,
+	reservation models.Reservation,
+	handler http.HandlerFunc,
+) {
+	ctx := getCtx(req)
+	req = req.WithContext(ctx)
+
+	if useSession {
+		app.Session.Put(ctx, "reservation", reservation)
+	}
+
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+	app.Session.Destroy(req.Context())
+
+	const errMessage = "Handler returned wrong response code: got %d, wanted %d"
+	if rr.Code != expectedCode {
+		t.Errorf(errMessage, rr.Code, expectedCode)
+	}
+
+	if expectedLocation != "" {
+		location := rr.Header().Get("Location")
+		if location != expectedLocation {
+			t.Errorf("Handler redirected to wrong URL: got %s, wanted %s", location, expectedLocation)
+		}
+	}
+}
+
 func TestNewRepo(t *testing.T) {
 	db := mockDB()
 	testRepo := NewRepo(&app, db)
@@ -52,6 +87,10 @@ func TestNewRepo(t *testing.T) {
 
 	if testRepo.DB == nil {
 		t.Error("expected DB repo to be initialized, got nil")
+	}
+
+	if reflect.TypeOf(testRepo).String() != "*handlers.Repository" {
+		t.Errorf("Did not get correct type from NewRepo: got %s, wanted *Repository", reflect.TypeOf(testRepo).String())
 	}
 
 }
@@ -109,30 +148,7 @@ func TestRepository_Booking(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		ctx := getCtx(req)
-		req = req.WithContext(ctx)
-
-		if useSession {
-			app.Session.Put(ctx, "reservation", reservation)
-		}
-
-		rr := httptest.NewRecorder()
-
-		handler := http.HandlerFunc(Repo.Booking)
-		handler.ServeHTTP(rr, req)
-		app.Session.Destroy(req.Context())
-
-		const errMessage = "Handler returned wrong response code: got %d, wanted %d"
-		if rr.Code != expectedCode {
-			t.Errorf(errMessage, rr.Code, expectedCode)
-		}
-
-		if expectedLocation != "" {
-			location := rr.Header().Get("Location")
-			if location != expectedLocation {
-				t.Errorf("Handler redirected to wrong URL: got %s, wanted %s", location, expectedLocation)
-			}
-		}
+		handleBookingRequest(t, req, useSession, expectedCode, expectedLocation, reservation, http.HandlerFunc(Repo.Booking))
 	}
 
 	t.Run("Valid request", func(t *testing.T) {
@@ -169,30 +185,7 @@ func TestRepository_PostBooking(t *testing.T) {
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-		ctx := getCtx(req)
-		req = req.WithContext(ctx)
-
-		if useSession {
-			app.Session.Put(ctx, "reservation", reservation)
-		}
-
-		rr := httptest.NewRecorder()
-
-		handler := http.HandlerFunc(Repo.PostBooking)
-		handler.ServeHTTP(rr, req)
-		app.Session.Destroy(req.Context())
-
-		const errMessage = "Handler returned wrong response code: got %d, wanted %d"
-		if rr.Code != expectedCode {
-			t.Errorf(errMessage, rr.Code, expectedCode)
-		}
-
-		if expectedLocation != "" {
-			location := rr.Header().Get("Location")
-			if location != expectedLocation {
-				t.Errorf("Handler redirected to wrong URL: got %s, wanted %s", location, expectedLocation)
-			}
-		}
+		handleBookingRequest(t, req, useSession, expectedCode, expectedLocation, reservation, http.HandlerFunc(Repo.PostBooking))
 	}
 
 	t.Run("Valid form", func(t *testing.T) {
