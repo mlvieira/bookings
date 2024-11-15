@@ -424,27 +424,7 @@ func TestRepository_ChooseRoom(t *testing.T) {
 		ctx := getCtx(req)
 		req = req.WithContext(ctx)
 
-		if useSession {
-			app.Session.Put(ctx, "reservation", reservation)
-		}
-
-		rr := httptest.NewRecorder()
-
-		handler := http.HandlerFunc(Repo.ChooseRoom)
-		handler.ServeHTTP(rr, req)
-		app.Session.Destroy(req.Context())
-
-		const errMessage = "Handler returned wrong response code: got %d, wanted %d"
-		if rr.Code != expectedCode {
-			t.Errorf(errMessage, rr.Code, expectedCode)
-		}
-
-		if expectedLocation != "" {
-			location := rr.Header().Get("Location")
-			if location != expectedLocation {
-				t.Errorf("Handler redirected to wrong URL: got %s, wanted %s", location, expectedLocation)
-			}
-		}
+		handleBookingRequest(t, req, useSession, expectedCode, expectedLocation, reservation, http.HandlerFunc(Repo.ChooseRoom))
 	}
 
 	t.Run("Valid request", func(t *testing.T) {
