@@ -13,4 +13,8 @@ require (
 	github.com/go-sql-driver/mysql v1.8.1
 )
 
-require filippo.io/edwards25519 v1.1.0 // indirect
+require (
+	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/toorop/go-dkim v0.0.0-20201103131630-e1cd1a0a5208 // indirect
+	github.com/xhit/go-simple-mail/v2 v2.16.0 // indirect
+)

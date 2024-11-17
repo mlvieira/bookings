@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -323,6 +324,38 @@ func (m *Repository) PostBooking(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+
+	htmlMsg := fmt.Sprintf(`
+		<strong>Reservation Confirmation</strong><br/>
+		Dear %s, <br>
+		This is a confirmation of your reservation from %s to %s for the room %s.
+	`, reservation.FirstName, reservation.StartDate.Format("01-02-2006"), reservation.EndDate.Format("01-02-2006"), reservation.Room.RoomName)
+
+	msg := models.MailData{
+		To:       reservation.Email,
+		From:     "noreply@bookings.com",
+		Subject:  "Your Reservation is Confirmed! 🎉",
+		Content:  htmlMsg,
+		Template: "confirmation.html",
+	}
+
+	m.App.MailChan <- msg
+
+	htmlMsg = fmt.Sprintf(`
+		<strong>Your room has been booked</strong><br/>
+		We're here to tell you great news!
+		Your room %s has been booked from %s to %s.
+	`, reservation.Room.RoomName, reservation.StartDate.Format("01-02-2006"), reservation.EndDate.Format("01-02-2006"))
+
+	msg = models.MailData{
+		To:       "john@realstate",
+		From:     "noreply@bookings.com",
+		Subject:  fmt.Sprintf("Your room %s has been booked! 🎉", reservation.Room.RoomName),
+		Content:  htmlMsg,
+		Template: "confirmation.html",
+	}
+
+	m.App.MailChan <- msg
 
 	m.App.Session.Put(r.Context(), "reservation", reservation)
 

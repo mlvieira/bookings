@@ -21,6 +21,7 @@ type AppConfig struct {
 	InProduction  bool
 	Port          string
 	Session       *scs.SessionManager
+	MailChan      chan models.MailData
 }
 
 // SetupAppConfig initializes the main application configuration
@@ -31,10 +32,13 @@ func SetupAppConfig(inProduction bool) *AppConfig {
 	gob.Register(models.Room{})
 	gob.Register(models.Restriction{})
 
+	mailChan := make(chan models.MailData)
+
 	app := AppConfig{
 		InProduction: inProduction,
 		InfoLog:      log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime),
 		ErrorLog:     log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile),
+		MailChan:     mailChan,
 	}
 
 	session := scs.New()

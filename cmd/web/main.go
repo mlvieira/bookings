@@ -24,6 +24,11 @@ func main() {
 
 	defer db.SQL.Close()
 
+	defer close(app.MailChan)
+
+	app.InfoLog.Println("Starting mail server")
+	listenForMail()
+
 	fmt.Printf("Starting aplication on http://localhost%s\n", app.Port)
 
 	srv := &http.Server{
