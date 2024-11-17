@@ -28,6 +28,10 @@ func TestMain(m *testing.M) {
 
 	app = *config.SetupAppConfig(false)
 
+	defer close(app.MailChan)
+
+	listenForMail()
+
 	tc, err := render.CreateTemplateCache()
 	if err != nil {
 		log.Fatal(err)
@@ -79,4 +83,12 @@ func newTestRepo(a *config.AppConfig) *Repository {
 		App: a,
 		DB:  dbrepo.NewTestRepo(a),
 	}
+}
+
+func listenForMail() {
+	go func() {
+		for {
+			_ = <-app.MailChan
+		}
+	}()
 }
