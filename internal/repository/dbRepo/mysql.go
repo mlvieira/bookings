@@ -2,9 +2,11 @@ package dbrepo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/mlvieira/bookings/internal/models"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // InsertReservation inserts a reservation into the database
@@ -251,4 +253,144 @@ func (m *mysqlDBRepo) GetRoomByUrl(url string) (models.Room, error) {
 	}
 
 	return room, nil
+}
+
+// GetUserByID fetch user information by ID
+func (m *mysqlDBRepo) GetUserByID(id int) (models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var u models.User
+
+	stmt, err := m.DB.Prepare(`
+				SELECT
+					id
+					, first_name 
+					, last_name
+					, email
+					, password
+					, access_level
+					, created_at
+					, updated_at
+				FROM
+					users
+				WHERE
+					id = ?
+			`)
+	if err != nil {
+		return u, err
+	}
+
+	defer stmt.Close()
+
+	row := stmt.QueryRowContext(ctx, id)
+	err = row.Scan(
+		&u.ID,
+		&u.FirstName,
+		&u.LastName,
+		&u.Email,
+		&u.Password,
+		&u.AccessLevel,
+		&u.CreatedAt,
+		&u.UpdatedAt,
+	)
+	if err != nil {
+		return u, err
+	}
+
+	return u, nil
+
+}
+
+// UpdateUser updates user information in the database
+func (m *mysqlDBRepo) UpdateUser(user models.User) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+				UPDATE
+					users
+				SET
+					first_name = ?
+					, last_name = ?
+					, email = ?
+					, access_level = ?
+					, updated_at = ?
+				WHERE
+					id = ?
+			`)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx,
+		user.FirstName,
+		user.LastName,
+		user.Email,
+		user.AccessLevel,
+		time.Now(),
+		user.ID,
+	)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+// Authenticate authenticates a user
+func (m *mysqlDBRepo) Authenticate(email, testPassword string) (int, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var id int
+	var hashedPassword string
+
+	stmt, err := m.DB.Prepare(`
+		SELECT
+			id
+			, password
+		FROM
+			users
+		WHERE
+			email = ?
+	`)
+	if err != nil {
+		return id, "", err
+	}
+
+	defer stmt.Close()
+
+	row := stmt.QueryRowContext(ctx, email)
+	err = row.Scan(
+		&id,
+		&hashedPassword,
+	)
+	if err != nil {
+		return id, "", err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(testPassword))
+	if err == bcrypt.ErrMismatchedHashAndPassword {
+		return 0, "", errors.New("incorrect password")
+	} else if err != nil {
+		return 0, "", err
+	}
+
+	return id, hashedPassword, nil
+
 }

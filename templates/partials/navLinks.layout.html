@@ -13,4 +13,10 @@
 </li>
 <li class="nav-item"><a href="/availability" class="nav-link px-2 text-body-secondary">Book Now</a></li>
 <li class="nav-item"><a href="/contact" class="nav-link px-2 text-body-secondary">Contact</a></li>
+<li class="nav-item">
+    {{if eq .IsAuthenticated 1}}
+        <a href="/user/logout" class="nav-link px-2 text-body-secondary">Logout</a></li>
+    {{else}}
+        <a href="/user/login" class="nav-link px-2 text-body-secondary">Login</a></li>
+    {{end}}
 {{end}}

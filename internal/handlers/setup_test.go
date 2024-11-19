@@ -66,6 +66,14 @@ func getRoutes() http.Handler {
 	mux.Get("/book", Repo.Booking)
 	mux.Post("/book", Repo.PostBooking)
 	mux.Get("/book/summary", Repo.ReservationSummary)
+	mux.Get("/user/login", Repo.ShowLoginPage)
+	mux.Post("/user/login", Repo.PostShowLoginPage)
+	mux.Get("/user/logout", Repo.Logout)
+
+	mux.Route("/admin", func(mux chi.Router) {
+		mux.Use(auth(app.Session))
+		mux.Get("/dashboard", Repo.AdminDashboard)
+	})
 
 	fileServer := http.FileServer(http.Dir("./static"))
 	mux.Handle("/static/*", http.StripPrefix("/static/", fileServer))
@@ -91,4 +99,17 @@ func listenForMail() {
 			_ = <-app.MailChan
 		}
 	}()
+}
+
+func auth(session *scs.SessionManager) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !helpers.IsAuthenticated(r) {
+				session.Put(r.Context(), "error", "Not logged in")
+				http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }

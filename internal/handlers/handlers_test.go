@@ -109,6 +109,7 @@ var testsData = []testsDataType{
 	{"Valid Room Page", "/rooms/majors-suite", http.StatusOK},
 	{"Valid Contact", "/contact", http.StatusOK},
 	{"Valid Availability GET", "/availability", http.StatusOK},
+	{"Valid login page GET", "/user/login", http.StatusOK},
 	{"Page not found", "/a", http.StatusNotFound},
 	{"Room not found", "/rooms/a", http.StatusNotFound},
 }
@@ -310,26 +311,7 @@ func TestRepository_PostAvailability(t *testing.T) {
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-		ctx := getCtx(req)
-		req = req.WithContext(ctx)
-
-		rr := httptest.NewRecorder()
-
-		handler := http.HandlerFunc(Repo.PostAvailability)
-		handler.ServeHTTP(rr, req)
-		app.Session.Destroy(req.Context())
-
-		const errMessage = "Handler returned wrong response code: got %d, wanted %d"
-		if rr.Code != expectedCode {
-			t.Errorf(errMessage, rr.Code, expectedCode)
-		}
-
-		if expectedLocation != "" {
-			location := rr.Header().Get("Location")
-			if location != expectedLocation {
-				t.Errorf("Handler redirected to wrong URL: got %s, wanted %s", location, expectedLocation)
-			}
-		}
+		handleBookingRequest(t, req, false, expectedCode, expectedLocation, models.Reservation{}, http.HandlerFunc(Repo.PostAvailability))
 	}
 
 	t.Run("Valid request", func(t *testing.T) {
@@ -437,5 +419,78 @@ func TestRepository_ChooseRoom(t *testing.T) {
 
 	t.Run("Missing session", func(t *testing.T) {
 		executeBookingTest(t, false, http.StatusTemporaryRedirect, "/", "1", models.Reservation{})
+	})
+}
+
+func TestRepository_PostShowLoginPage(t *testing.T) {
+	executeLoginPage := func(
+		t *testing.T,
+		useForm bool,
+		expectedCode int,
+		expectedLocation string,
+		form url.Values,
+	) {
+		var body io.Reader = nil
+		if useForm {
+			body = strings.NewReader(form.Encode())
+		}
+		req, err := http.NewRequest("POST", "/users/login", body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+		handleBookingRequest(t, req, false, expectedCode, expectedLocation, models.Reservation{}, http.HandlerFunc(Repo.PostShowLoginPage))
+	}
+
+	t.Run("Valid login", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("email", "john@example.com")
+		form.Add("password", "password")
+		executeLoginPage(t, true, http.StatusSeeOther, "/", form)
+	})
+
+	t.Run("Invalid form", func(t *testing.T) {
+		executeLoginPage(t, false, http.StatusSeeOther, "/user/login", nil)
+	})
+
+	t.Run("Empty email", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("email", "")
+		form.Add("password", "password")
+		executeLoginPage(t, true, http.StatusSeeOther, "/user/login", form)
+	})
+
+	t.Run("Invalid email", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("email", "john")
+		form.Add("password", "password")
+		executeLoginPage(t, true, http.StatusSeeOther, "", form)
+	})
+
+	t.Run("Wrong credentials", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("email", "johhn@at.com")
+		form.Add("password", "password")
+		executeLoginPage(t, true, http.StatusSeeOther, "/user/login", form)
+	})
+}
+
+func TestRepository_Logout(t *testing.T) {
+	execLogout := func(
+		t *testing.T,
+		expectedCode int,
+		expectedLocation string,
+	) {
+		req, err := http.NewRequest("GET", "/logout", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		handleBookingRequest(t, req, false, expectedCode, expectedLocation, models.Reservation{}, http.HandlerFunc(Repo.Logout))
+	}
+
+	t.Run("Logout", func(t *testing.T) {
+		execLogout(t, http.StatusSeeOther, "/user/login")
 	})
 }

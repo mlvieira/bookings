@@ -75,3 +75,24 @@ func (m *testDBRepo) GetRoomByUrl(url string) (models.Room, error) {
 
 	return room, nil
 }
+
+// GetUserByID fetch user information by ID
+func (m *testDBRepo) GetUserByID(id int) (models.User, error) {
+	var u models.User
+
+	return u, nil
+}
+
+// UpdateUser updates user information in the database
+func (m *testDBRepo) UpdateUser(user models.User) error {
+	return nil
+}
+
+// Authenticate authenticates a user
+func (m *testDBRepo) Authenticate(email, testPassword string) (int, string, error) {
+	if email != "john@example.com" {
+		return 0, "", errors.New("err")
+	}
+
+	return 0, "", nil
+}

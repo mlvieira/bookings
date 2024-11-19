@@ -28,7 +28,7 @@
             <a class="navbar-brand" href="#">Navbar</a>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    {{template "navLinks" (dict "DropUp" false)}}
+                    {{template "navLinks" (dict "DropUp" false "IsAuthenticated" .IsAuthenticated)}}
                 </ul>
             </div>
         </div>
@@ -39,7 +39,7 @@
         data-bs-theme="dark">
         <p class="col-md-4 mb-0 text-body-secondary">© 2024 Company, Inc</p>
         <ul class="nav col-md-4 justify-content-end">
-            {{template "navLinks" (dict "DropUp" true)}}
+            {{template "navLinks" (dict "DropUp" true "IsAuthenticated" .IsAuthenticated)}}
         </ul>
     </footer>
     {{block "js" .}}

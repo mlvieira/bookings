@@ -9,6 +9,7 @@ import (
 	"github.com/justinas/nosurf"
 	"github.com/mlvieira/bookings/internal/config"
 	"github.com/mlvieira/bookings/internal/handlers"
+	"github.com/mlvieira/bookings/internal/helpers"
 )
 
 func Routes(app *config.AppConfig) http.Handler {
@@ -29,6 +30,14 @@ func Routes(app *config.AppConfig) http.Handler {
 	mux.Get("/book", handlers.Repo.Booking)
 	mux.Post("/book", handlers.Repo.PostBooking)
 	mux.Get("/book/summary", handlers.Repo.ReservationSummary)
+	mux.Get("/user/login", handlers.Repo.ShowLoginPage)
+	mux.Post("/user/login", handlers.Repo.PostShowLoginPage)
+	mux.Get("/user/logout", handlers.Repo.Logout)
+
+	mux.Route("/admin", func(mux chi.Router) {
+		mux.Use(auth(app.Session))
+		mux.Get("/dashboard", handlers.Repo.AdminDashboard)
+	})
 
 	fileServer := http.FileServer(http.Dir("./static"))
 	mux.Handle("/static/*", http.StripPrefix("/static/", fileServer))
@@ -52,5 +61,18 @@ func noSurf(app *config.AppConfig) func(http.Handler) http.Handler {
 			SameSite: http.SameSiteLaxMode,
 		})
 		return csrfHandler
+	}
+}
+
+func auth(session *scs.SessionManager) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !helpers.IsAuthenticated(r) {
+				session.Put(r.Context(), "error", "Not logged in")
+				http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
 	}
 }
