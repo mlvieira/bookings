@@ -394,3 +394,200 @@ func (m *mysqlDBRepo) Authenticate(email, testPassword string) (int, string, err
 	return id, hashedPassword, nil
 
 }
+
+// AllReservations returns a slice of all reservations
+func (m *mysqlDBRepo) AllReservations() ([]models.Reservation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var reservations []models.Reservation
+
+	stmt, err := m.DB.Prepare(`
+		SELECT
+			r.id
+			, r.first_name
+			, r.last_name
+			, r.email
+			, r.phone
+			, r.start_date
+			, r.end_date
+			, r.processed
+			, r.room_id
+			, r.created_at
+			, r.updated_at
+			, rm.id
+			, rm.room_name
+		FROM
+			reservations r
+		LEFT JOIN
+			rooms rm on r.room_id = rm.id
+		ORDER BY r.start_date asc
+	`)
+	if err != nil {
+		return reservations, err
+	}
+
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		return reservations, err
+	}
+
+	for rows.Next() {
+		var i models.Reservation
+		err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.LastName,
+			&i.Email,
+			&i.Phone,
+			&i.StartDate,
+			&i.EndDate,
+			&i.Processed,
+			&i.RoomID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Room.ID,
+			&i.Room.RoomName,
+		)
+		if err != nil {
+			return reservations, err
+		}
+
+		reservations = append(reservations, i)
+	}
+
+	if err = rows.Err(); err != nil {
+		return reservations, err
+	}
+
+	return reservations, nil
+}
+
+// AllNewReservations returns a slice of all new reservations
+func (m *mysqlDBRepo) AllNewReservations() ([]models.Reservation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var reservations []models.Reservation
+
+	stmt, err := m.DB.Prepare(`
+		SELECT
+			r.id
+			, r.first_name
+			, r.last_name
+			, r.email
+			, r.phone
+			, r.start_date
+			, r.end_date
+			, r.room_id
+			, r.created_at
+			, r.updated_at
+			, rm.id
+			, rm.room_name
+		FROM
+			reservations r
+		LEFT JOIN
+			rooms rm on r.room_id = rm.id
+		WHERE
+			r.processed = 0
+		ORDER BY r.start_date asc
+	`)
+	if err != nil {
+		return reservations, err
+	}
+
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		return reservations, err
+	}
+
+	for rows.Next() {
+		var i models.Reservation
+		err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.LastName,
+			&i.Email,
+			&i.Phone,
+			&i.StartDate,
+			&i.EndDate,
+			&i.RoomID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Room.ID,
+			&i.Room.RoomName,
+		)
+		if err != nil {
+			return reservations, err
+		}
+
+		reservations = append(reservations, i)
+	}
+
+	if err = rows.Err(); err != nil {
+		return reservations, err
+	}
+
+	return reservations, nil
+}
+
+// GetReservationById return reservation associated by ID
+func (m *mysqlDBRepo) GetReservationById(id int) (models.Reservation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var reservation models.Reservation
+
+	stmt, err := m.DB.Prepare(`
+		SELECT
+			r.id
+			, r.first_name
+			, r.last_name
+			, r.email
+			, r.phone
+			, r.start_date
+			, r.end_date
+			, r.room_id
+			, r.created_at
+			, r.updated_at
+			, r.processed
+			, rm.id
+			, rm.room_name
+		FROM
+			reservations r
+		LEFT JOIN rooms rm ON r.room_id = rm.id
+		WHERE
+			r.id = ?
+	`)
+	if err != nil {
+		return reservation, err
+	}
+
+	defer stmt.Close()
+
+	row := stmt.QueryRowContext(ctx, id)
+	err = row.Scan(
+		&reservation.ID,
+		&reservation.FirstName,
+		&reservation.LastName,
+		&reservation.Email,
+		&reservation.Phone,
+		&reservation.StartDate,
+		&reservation.EndDate,
+		&reservation.RoomID,
+		&reservation.CreatedAt,
+		&reservation.UpdatedAt,
+		&reservation.Processed,
+		&reservation.Room.ID,
+		&reservation.Room.RoomName,
+	)
+	if err != nil {
+		return reservation, err
+	}
+
+	return reservation, nil
+}

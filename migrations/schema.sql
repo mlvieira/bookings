@@ -33,6 +33,7 @@ CREATE TABLE `reservations` (
   `room_id` int(11) NOT NULL,
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
+  `processed` int(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `reservations_rooms_id_fk` (`room_id`),
   KEY `reservations_email_idx` (`email`),
@@ -147,4 +148,4 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-11-04 11:49:15
+-- Dump completed on 2024-11-26 13:58:27

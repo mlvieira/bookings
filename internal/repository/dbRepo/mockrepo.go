@@ -96,3 +96,22 @@ func (m *testDBRepo) Authenticate(email, testPassword string) (int, string, erro
 
 	return 0, "", nil
 }
+
+// TODO
+func (m *testDBRepo) AllReservations() ([]models.Reservation, error) {
+	var reservations []models.Reservation
+
+	return reservations, nil
+}
+
+func (m *testDBRepo) AllNewReservations() ([]models.Reservation, error) {
+	var reservations []models.Reservation
+
+	return reservations, nil
+}
+
+func (m *testDBRepo) GetReservationById(id int) (models.Reservation, error) {
+	var reservation models.Reservation
+
+	return reservation, nil
+}

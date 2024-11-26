@@ -487,3 +487,74 @@ func (m *Repository) Logout(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) AdminDashboard(w http.ResponseWriter, r *http.Request) {
 	render.Template(w, r, "admin-dashboard.page.html", &models.TemplateData{})
 }
+
+func (m *Repository) AdminNewReservations(w http.ResponseWriter, r *http.Request) {
+	reservations, err := m.DB.AllNewReservations()
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	data := make(map[string]any)
+	data["reservations"] = reservations
+
+	render.Template(w, r, "admin-new-reservations.page.html", &models.TemplateData{
+		Data: data,
+	})
+}
+
+func (m *Repository) AdminAllReservations(w http.ResponseWriter, r *http.Request) {
+	reservations, err := m.DB.AllReservations()
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	data := make(map[string]any)
+	data["reservations"] = reservations
+
+	render.Template(w, r, "admin-all-reservations.page.html", &models.TemplateData{
+		Data: data,
+	})
+}
+
+func (m *Repository) AdminCalendarReservations(w http.ResponseWriter, r *http.Request) {
+	render.Template(w, r, "admin-calendar-reservations.page.html", &models.TemplateData{})
+}
+
+func (m *Repository) AdminReservationSummary(w http.ResponseWriter, r *http.Request) {
+	sourceStr := chi.URLParam(r, "src")
+	if sourceStr == "" {
+		err := errors.New("invalid source")
+		m.App.Session.Put(r.Context(), "error", err)
+		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)
+		return
+	}
+
+	reservationIDstr := chi.URLParam(r, "id")
+	resStr, err := strconv.Atoi(reservationIDstr)
+	if err != nil {
+		err = errors.New("invalid reservation id")
+		m.App.Session.Put(r.Context(), "error", err)
+		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)
+		return
+	}
+
+	stringMap := make(map[string]string)
+	stringMap["src"] = sourceStr
+
+	res, err := m.DB.GetReservationById(resStr)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	data := make(map[string]any)
+	data["reservation"] = res
+
+	render.Template(w, r, "admin-reservations-summary.page.html", &models.TemplateData{
+		StringMap: stringMap,
+		Data:      data,
+		Form:      forms.New(nil),
+	})
+}
