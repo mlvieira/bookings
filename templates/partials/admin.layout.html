@@ -59,16 +59,16 @@
                         <div class="collapse" id="ui-basic">
                             <ul class="nav flex-column sub-menu">
                                 <li class="nav-item">
-                                    <a class="nav-link" href="/admin/reservations-new">New Reservations</a>
+                                    <a class="nav-link" href="/admin/reservations/new">New Reservations</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" href="/admin/reservations-all">All Reservations</a>
+                                    <a class="nav-link" href="/admin/reservations/all">All Reservations</a>
                                 </li>
                             </ul>
                         </div>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link d-flex align-items-center" href="/admin/reservation-calendar">
+                        <a class="nav-link d-flex align-items-center" href="/admin/reservations/calendar">
                             <i class="fa-regular fa-calendar-days"></i>
                             <span class="menu-title mx-2">Reservation Calendar</span>
                         </a>
@@ -77,7 +77,7 @@
                 </ul>
             </nav>
             <div class="main-panel">
-                <div class="content-wrapper">
+                <div class="content-wrapper" id="main-content">
                     <div class="row">
                         <div class="col-md-12 grid-margin">
                             <div class="d-flex justify-content-between align-items-center">
@@ -104,6 +104,8 @@
             </div>
         </div>
     </div>
+    <script src="/static/js/sweetalert2.min.js"></script>
+    <script src="/static/js/main.js"></script>
     <script src="/static/admin/js/template.js"></script>
     <script src="/static/js/bootstrap.bundle.min.js"></script>
 
