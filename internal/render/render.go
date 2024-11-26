@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"text/template"
+	"time"
 
 	"github.com/justinas/nosurf"
 	"github.com/mlvieira/bookings/internal/config"
@@ -80,7 +81,9 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 	}
 
 	funcMap := template.FuncMap{
-		"dict": dict,
+		"humanDate": humanDate,
+		"dict":      dict,
+		"concat":    concat,
 	}
 
 	for _, page := range pages {
@@ -106,4 +109,14 @@ func dict(values ...any) map[string]any {
 		m[key] = value
 	}
 	return m
+}
+
+// humanDate return time in mm-dd-yyyy format
+func humanDate(t time.Time) string {
+	return t.Format("01-02-2006")
+}
+
+// concat Concat two strings
+func concat(x, y string) string {
+	return x + " " + y
 }
