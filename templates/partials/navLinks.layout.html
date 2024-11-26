@@ -15,7 +15,16 @@
 <li class="nav-item"><a href="/contact" class="nav-link px-2 text-body-secondary">Contact</a></li>
 <li class="nav-item">
     {{if eq .IsAuthenticated 1}}
-        <a href="/user/logout" class="nav-link px-2 text-body-secondary">Logout</a></li>
+        <li class="nav-item {{if .DropUp}}dropup{{else}}dropdown{{end}}">
+            <a class="nav-link px-2 text-body-secondary dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                data-bs-auto-close="true" aria-expanded="false">
+                Admin
+            </a>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="/admin/dashboard">Dashboard</a></li>
+                <li><a class="dropdown-item" href="/user/logout">Logout</a></li>
+            </ul>
+        </li>
     {{else}}
         <a href="/user/login" class="nav-link px-2 text-body-secondary">Login</a></li>
     {{end}}
