@@ -53,7 +53,7 @@ func run() (*driver.DB, error) {
 	app.UseCache = app.InProduction
 	app.Port = ":8080"
 
-	db, err := driver.ConnectSQL("dev:dev@/bookings")
+	db, err := driver.ConnectSQL("dev:dev@/bookings?parseTime=true")
 	if err != nil {
 		return nil, err
 	}
