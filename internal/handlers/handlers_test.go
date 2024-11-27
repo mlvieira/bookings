@@ -79,6 +79,25 @@ func handleBookingRequest(
 	}
 }
 
+func handleAdminHandlers(
+	t *testing.T,
+	req *http.Request,
+	expectedCode int,
+	handler http.HandlerFunc,
+) {
+	ctx := getCtx(req)
+	req = req.WithContext(ctx)
+	app.Session.Put(ctx, "user_id", 1)
+
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+
+	const errMessage = "Handler returned wrong response code: got %d, wanted %d"
+	if rr.Code != expectedCode {
+		t.Errorf(errMessage, rr.Code, expectedCode)
+	}
+}
+
 func TestNewRepo(t *testing.T) {
 	db := mockDB()
 	testRepo := NewRepo(&app, db)
@@ -492,5 +511,23 @@ func TestRepository_Logout(t *testing.T) {
 
 	t.Run("Logout", func(t *testing.T) {
 		execLogout(t, http.StatusSeeOther, "/user/login")
+	})
+}
+
+func TestRepository_AdminDashboard(t *testing.T) {
+	execLogout := func(
+		t *testing.T,
+		expectedCode int,
+	) {
+		req, err := http.NewRequest("GET", "/admin/dashboard", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		handleAdminHandlers(t, req, expectedCode, http.HandlerFunc(Repo.AdminDashboard))
+	}
+
+	t.Run("Get dashboard", func(t *testing.T) {
+		execLogout(t, http.StatusOK)
 	})
 }
