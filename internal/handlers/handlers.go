@@ -361,20 +361,12 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 
 	m.App.Session.Remove(r.Context(), "reservation")
 
-	stringMap := make(map[string]string)
 	data := make(map[string]any)
 
 	data["reservation"] = reservation
 
-	sd := reservation.StartDate.Format("01-02-2006")
-	ed := reservation.EndDate.Format("01-02-2006")
-
-	stringMap["start_date"] = sd
-	stringMap["end_date"] = ed
-
 	render.Template(w, r, "reservation-summary.page.html", &models.TemplateData{
-		Data:      data,
-		StringMap: stringMap,
+		Data: data,
 	})
 }
 
