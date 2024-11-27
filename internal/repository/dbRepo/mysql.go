@@ -591,3 +591,127 @@ func (m *mysqlDBRepo) GetReservationById(id int) (models.Reservation, error) {
 
 	return reservation, nil
 }
+
+// UpdateReservation updates user information in the database
+func (m *mysqlDBRepo) UpdateReservation(res models.Reservation) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+				UPDATE
+					reservations
+				SET
+					first_name = ?
+					, last_name = ?
+					, email = ?
+					, phone = ?
+					, updated_at = ?
+				WHERE
+					id = ?
+			`)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx,
+		res.FirstName,
+		res.LastName,
+		res.Email,
+		res.Phone,
+		time.Now(),
+		res.ID,
+	)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+// DeleteReservation deletes reservation by id
+func (m *mysqlDBRepo) DeleteReservation(id int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+				DELETE FROM	
+					reservations
+				WHERE
+					id = ?
+			`)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, id)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateProcessedForReservation updates processed for a reservation ID
+func (m *mysqlDBRepo) UpdateProcessedForReservation(id, processed int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+				UPDATE	
+					reservations
+				SET
+					processed = ?
+				WHERE
+					id = ?
+			`)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, processed, id)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}

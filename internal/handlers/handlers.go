@@ -525,8 +525,7 @@ func (m *Repository) AdminCalendarReservations(w http.ResponseWriter, r *http.Re
 func (m *Repository) AdminReservationSummary(w http.ResponseWriter, r *http.Request) {
 	sourceStr := chi.URLParam(r, "src")
 	if sourceStr == "" {
-		err := errors.New("invalid source")
-		m.App.Session.Put(r.Context(), "error", err)
+		m.App.Session.Put(r.Context(), "error", "Invalid source")
 		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)
 		return
 	}
@@ -534,8 +533,7 @@ func (m *Repository) AdminReservationSummary(w http.ResponseWriter, r *http.Requ
 	reservationIDstr := chi.URLParam(r, "id")
 	resStr, err := strconv.Atoi(reservationIDstr)
 	if err != nil {
-		err = errors.New("invalid reservation id")
-		m.App.Session.Put(r.Context(), "error", err)
+		m.App.Session.Put(r.Context(), "error", "Invalid reservation id")
 		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)
 		return
 	}
@@ -545,7 +543,8 @@ func (m *Repository) AdminReservationSummary(w http.ResponseWriter, r *http.Requ
 
 	res, err := m.DB.GetReservationById(resStr)
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "Reservation not found")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
 		return
 	}
 
@@ -557,4 +556,166 @@ func (m *Repository) AdminReservationSummary(w http.ResponseWriter, r *http.Requ
 		Data:      data,
 		Form:      forms.New(nil),
 	})
+}
+
+func (m *Repository) PostAdminReservationSummary(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	sourceStr := chi.URLParam(r, "src")
+	if sourceStr == "" {
+		m.App.Session.Put(r.Context(), "error", "Invalid source")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)
+		return
+	}
+
+	reservationIDstr := chi.URLParam(r, "id")
+	resStr, err := strconv.Atoi(reservationIDstr)
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Invalid reservation id")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)
+		return
+	}
+
+	stringMap := make(map[string]string)
+	stringMap["src"] = sourceStr
+
+	res, err := m.DB.GetReservationById(resStr)
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Reservation not found")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	res.FirstName = r.Form.Get("first_name")
+	res.LastName = r.Form.Get("last_name")
+	res.Email = r.Form.Get("email")
+	res.Phone = r.Form.Get("phone")
+
+	form := forms.New(r.PostForm)
+
+	form.Required("first_name", "last_name", "email", "phone")
+	form.MinLength("first_name", 3)
+	form.MinLength("last_name", 3)
+	form.IsEmail("email")
+
+	if !form.Valid() {
+		m.App.Session.Put(r.Context(), "error", "Invalid form values")
+		http.Redirect(w, r, fmt.Sprintf("/admin/reservations/%s/%d", sourceStr, resStr), http.StatusSeeOther)
+		return
+	}
+
+	err = m.DB.UpdateReservation(res)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
+	m.App.Session.Put(r.Context(), "flash", "Reservation updated successfully")
+
+	http.Redirect(w, r, fmt.Sprintf("/admin/reservations/%s", sourceStr), http.StatusSeeOther)
+}
+
+type payloadStatus struct {
+	ID string `json:"id"`
+}
+
+func (m *Repository) PostJsonAdminChangeResStatus(w http.ResponseWriter, r *http.Request) {
+	var payload payloadStatus
+
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Internal server error",
+		}
+		out, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	id, err := strconv.Atoi(payload.ID)
+	if err != nil {
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Invalid reservation ID",
+		}
+		out, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	err = m.DB.UpdateProcessedForReservation(id, 1)
+	if err != nil {
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Error updating database",
+		}
+		out, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	resp := jsonResponse{
+		OK:      true,
+		Message: "Reservation status has been changed!",
+	}
+
+	out, _ := json.Marshal(resp)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(out)
+}
+
+func (m *Repository) PostJsonAdminDeleteRes(w http.ResponseWriter, r *http.Request) {
+	var payload payloadStatus
+
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Internal server error",
+		}
+		out, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	id, err := strconv.Atoi(payload.ID)
+	if err != nil {
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Invalid reservation ID",
+		}
+		out, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	err = m.DB.DeleteReservation(id)
+	if err != nil {
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Error updating database",
+		}
+		out, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	resp := jsonResponse{
+		OK:      true,
+		Message: "Reservation has been deleted!",
+	}
+
+	out, _ := json.Marshal(resp)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(out)
 }

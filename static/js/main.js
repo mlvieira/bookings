@@ -118,7 +118,7 @@ const Prompt = () => {
 		});
 
 		if (callback) {
-			if (result && result.dismiss !== Swal.DismissReason.cancel && result.value !== "") {
+			if (result && result.dismiss !== Swal.DismissReason.cancel && result.value !== "" || result?.IsConfirmed) {
 				callback(result);
 			} else {
 				callback(false);

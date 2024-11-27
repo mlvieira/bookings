@@ -18,6 +18,15 @@
 </head>
 
 <body>
+    {{with .Error}}
+        <p class="d-none do-popup" data-class="error" data-message="{{.}}"></p>
+    {{end}}
+    {{with .Warning}}
+        <p class="d-none do-popup" data-class="warning" data-message="{{.}}"></p>
+    {{end}}
+    {{with .Flash}}
+        <p class="d-none do-popup" data-class="success" data-message="{{.}}"></p>
+    {{end}}
     <div class="container-scroller">
         <nav class="navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
             <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">

@@ -80,9 +80,11 @@ Reservation summary
             <input type="phone" class="form-control{{with .Form.Errors.Get " phone"}} is-invalid{{end}}" id="phone"
                 name="phone" aria-describedby="phone" required value="{{$res.Phone}}">
         </div>
-        <div class="col-md-12">
-            <button type="submit" class="btn btn-primary">Send</button>
-            <a href="/admin/reservations/{{$src}}" class="btn btn-warning">Cancel</a>
+        <div class="col-md-12 d-flex align-items-center">
+            <button type="submit" class="btn btn-primary me-2">Send</button>
+            <a href="/admin/reservations/{{$src}}" class="btn btn-warning me-2">Cancel</a>
+            <button type="button" class="btn btn-info me-2" id="markProcessed" data-id="{{$res.ID}}" {{if eq $res.Processed 1}}disabled{{end}}>Mark as Processed</button>
+            <button type="button" class="btn btn-danger ms-auto" id="deleteRes" data-id="{{$res.ID}}" data-source="{{$src}}">Delete</button>
         </div>
     </form>
 </div>
