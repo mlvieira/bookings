@@ -10,36 +10,7 @@ Reservation summary
     <div class="row">
         <div class="col">
             <hr>
-            <table class="table table-striped">
-                <thead>
-                <tbody>
-                    <tr>
-                        <td>Name:</td>
-                        <td>{{$res.FirstName}} {{$res.LastName}}</td>
-                    </tr>
-                    <tr>
-                        <td>Room:</td>
-                        <td>{{$res.Room.RoomName}}</td>
-                    </tr>
-                    <tr>
-                        <td>Arrival:</td>
-                        <td>{{humanDate $res.StartDate}}</td>
-                    </tr>
-                    <tr>
-                        <td>Departure:</td>
-                        <td>{{humanDate $res.EndDate}}</td>
-                    </tr>
-                    <tr>
-                        <td>Email:</td>
-                        <td>{{$res.Email}}</td>
-                    </tr>
-                    <tr>
-                        <td>Phone:</td>
-                        <td>{{$res.Phone}}</td>
-                    </tr>
-                </tbody>
-                </thead>
-            </table>
+            {{template "reservation-summary" (dict "res" $res)}}
         </div>
     </div>
     <h4 class="fw-bold mb-2">Edit Reservation</h4>
@@ -51,7 +22,7 @@ Reservation summary
             {{with .Form.Errors.Get "first_name"}}
             <label class="text-danger">{{.}}</label>
             {{end}}
-            <input type="text" class="form-control{{with .Form.Errors.Get " first_name"}} is-invalid{{end}}"
+            <input type="text" class="form-control{{with .Form.Errors.Get "first_name"}} is-invalid{{end}}"
                 id="first_name" name="first_name" aria-describedby="firstNameHelp" required autocomplete="off"
                 autocapitalize="on" value="{{$res.FirstName}}">
         </div>
@@ -60,7 +31,7 @@ Reservation summary
             {{with .Form.Errors.Get "last_name"}}
             <label class="text-danger">{{.}}</label>
             {{end}}
-            <input type="text" class="form-control{{with .Form.Errors.Get " last_name"}} is-invalid{{end}}"
+            <input type="text" class="form-control{{with .Form.Errors.Get "last_name"}} is-invalid{{end}}"
                 id="last_name" name="last_name" aria-describedby="lastNameHelp" required autocomplete="off"
                 autocapitalize="on" value="{{$res.LastName}}">
         </div>
@@ -69,7 +40,7 @@ Reservation summary
             {{with .Form.Errors.Get "email"}}
             <label class="text-danger">{{.}}</label>
             {{end}}
-            <input type="email" class="form-control{{with .Form.Errors.Get " email"}} is-invalid{{end}}" id="email"
+            <input type="email" class="form-control{{with .Form.Errors.Get "email"}} is-invalid{{end}}" id="email"
                 name="email" aria-describedby="email" required value="{{$res.Email}}">
         </div>
         <div class="col-md-6">

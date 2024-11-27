@@ -1,0 +1,32 @@
+{{define "reservation-summary"}}
+<table class="table table-striped">
+    <thead>
+    <tbody>
+        <tr>
+            <td>Name:</td>
+            <td>{{concat .res.FirstName .res.LastName}}</td>
+        </tr>
+        <tr>
+            <td>Room:</td>
+            <td>{{.res.Room.RoomName}}</td>
+        </tr>
+        <tr>
+            <td>Arrival:</td>
+            <td>{{humanDate .res.StartDate}}</td>
+        </tr>
+        <tr>
+            <td>Departure:</td>
+            <td>{{humanDate .res.EndDate}}</td>
+        </tr>
+        <tr>
+            <td>Email:</td>
+            <td>{{.res.Email}}</td>
+        </tr>
+        <tr>
+            <td>Phone:</td>
+            <td>{{.res.Phone}}</td>
+        </tr>
+    </tbody>
+    </thead>
+</table>
+{{end}}
