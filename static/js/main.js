@@ -117,6 +117,7 @@ const Prompt = () => {
 			showLoaderOnConfirm,
 			confirmButtonText,
 			cancelButtonText,
+			scrollPositionRestoration: 'never',
 			willOpen: willOpen || undefined,
 			didOpen: didOpen || undefined
 		});
