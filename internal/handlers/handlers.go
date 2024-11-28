@@ -409,6 +409,10 @@ func (m *Repository) ChooseRoom(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/book", http.StatusSeeOther)
 }
 
+func (m *Repository) NotFound(w http.ResponseWriter, r *http.Request) {
+	render.Template(w, r, "not-found.page.html", &models.TemplateData{})
+}
+
 func (m *Repository) ShowLoginPage(w http.ResponseWriter, r *http.Request) {
 	render.Template(w, r, "login.page.html", &models.TemplateData{
 		Form: forms.New(nil),
