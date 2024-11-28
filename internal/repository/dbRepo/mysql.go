@@ -693,6 +693,7 @@ func (m *mysqlDBRepo) UpdateProcessedForReservation(id, processed int) error {
 					reservations
 				SET
 					processed = ?
+					updated_at = ?
 				WHERE
 					id = ?
 			`)
@@ -703,7 +704,7 @@ func (m *mysqlDBRepo) UpdateProcessedForReservation(id, processed int) error {
 
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, processed, id)
+	_, err = stmt.ExecContext(ctx, processed, time.Now(), id)
 	if err != nil {
 		tx.Rollback()
 		return err
