@@ -99,12 +99,14 @@ const Prompt = () => {
 			showCancelButton = false,
 			allowOutsideClick = false,
 			showLoaderOnConfirm = false,
+			confirmButtonText = "OK",
+			cancelButtonText = "Close",
 			willOpen,
 			didOpen,
 			callback
 		} = config;
 
-		const { value: result } = await Swal.fire({
+		const result = await Swal.fire({
 			icon,
 			title,
 			html: msg,
@@ -113,12 +115,14 @@ const Prompt = () => {
 			showConfirmButton,
 			allowOutsideClick,
 			showLoaderOnConfirm,
+			confirmButtonText,
+			cancelButtonText,
 			willOpen: willOpen || undefined,
 			didOpen: didOpen || undefined
 		});
 
-		if (callback) {
-			if (result && result.dismiss !== Swal.DismissReason.cancel && result.value !== "" || result?.IsConfirmed) {
+		if (callback && showConfirmButton) {
+			if (result.isConfirmed) {
 				callback(result);
 			} else {
 				callback(false);
@@ -147,7 +151,7 @@ const roomAvailability = () => {
 		e.preventDefault();
 		const formContainer = document.getElementById('availability-form-container');
 		const html = formContainer.innerHTML;
-		
+
 		alert.custom({
 			title: 'Search Availability',
 			msg: html,
