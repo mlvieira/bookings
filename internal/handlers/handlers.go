@@ -243,20 +243,12 @@ func (m *Repository) Booking(w http.ResponseWriter, r *http.Request) {
 
 	m.App.Session.Put(r.Context(), "reservation", res)
 
-	sd := res.StartDate.Format("01-02-2006")
-	ed := res.EndDate.Format("01-02-2006")
-
-	stringMap := make(map[string]string)
-	stringMap["start_date"] = sd
-	stringMap["end_date"] = ed
-
 	data := make(map[string]any)
 	data["reservation"] = res
 
 	render.Template(w, r, "reservation.page.html", &models.TemplateData{
-		Form:      forms.New(nil),
-		Data:      data,
-		StringMap: stringMap,
+		Form: forms.New(nil),
+		Data: data,
 	})
 }
 
@@ -522,7 +514,7 @@ func (m *Repository) JsonAdminCalendarReservations(w http.ResponseWriter, r *htt
 			Start:    res.StartDate,
 			End:      res.EndDate,
 			AllDay:   true,
-			Url:      fmt.Sprintf("/admin/reservations/all/%d", res.ID),
+			Url:      fmt.Sprintf("/admin/reservations/details/%d", res.ID),
 			Editable: false,
 			ExtendedProps: map[string]any{
 				"name":        fmt.Sprintf("%s %s", res.FirstName, res.LastName),
@@ -545,13 +537,6 @@ func (m *Repository) AdminCalendarReservations(w http.ResponseWriter, r *http.Re
 }
 
 func (m *Repository) AdminReservationSummary(w http.ResponseWriter, r *http.Request) {
-	sourceStr := chi.URLParam(r, "src")
-	if sourceStr == "" {
-		m.App.Session.Put(r.Context(), "error", "Invalid source")
-		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)
-		return
-	}
-
 	reservationIDstr := chi.URLParam(r, "id")
 	resStr, err := strconv.Atoi(reservationIDstr)
 	if err != nil {
@@ -559,9 +544,6 @@ func (m *Repository) AdminReservationSummary(w http.ResponseWriter, r *http.Requ
 		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)
 		return
 	}
-
-	stringMap := make(map[string]string)
-	stringMap["src"] = sourceStr
 
 	res, err := m.DB.GetReservationById(resStr)
 	if err != nil {
@@ -574,9 +556,8 @@ func (m *Repository) AdminReservationSummary(w http.ResponseWriter, r *http.Requ
 	data["reservation"] = res
 
 	render.Template(w, r, "admin-reservations-summary.page.html", &models.TemplateData{
-		StringMap: stringMap,
-		Data:      data,
-		Form:      forms.New(nil),
+		Data: data,
+		Form: forms.New(nil),
 	})
 }
 
@@ -587,13 +568,6 @@ func (m *Repository) PostAdminReservationSummary(w http.ResponseWriter, r *http.
 		return
 	}
 
-	sourceStr := chi.URLParam(r, "src")
-	if sourceStr == "" {
-		m.App.Session.Put(r.Context(), "error", "Invalid source")
-		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)
-		return
-	}
-
 	reservationIDstr := chi.URLParam(r, "id")
 	resStr, err := strconv.Atoi(reservationIDstr)
 	if err != nil {
@@ -601,9 +575,6 @@ func (m *Repository) PostAdminReservationSummary(w http.ResponseWriter, r *http.
 		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)
 		return
 	}
-
-	stringMap := make(map[string]string)
-	stringMap["src"] = sourceStr
 
 	res, err := m.DB.GetReservationById(resStr)
 	if err != nil {
@@ -626,7 +597,7 @@ func (m *Repository) PostAdminReservationSummary(w http.ResponseWriter, r *http.
 
 	if !form.Valid() {
 		m.App.Session.Put(r.Context(), "error", "Invalid form values")
-		http.Redirect(w, r, fmt.Sprintf("/admin/reservations/%s/%d", sourceStr, resStr), http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/admin/reservations/details/%d", resStr), http.StatusSeeOther)
 		return
 	}
 
@@ -637,7 +608,7 @@ func (m *Repository) PostAdminReservationSummary(w http.ResponseWriter, r *http.
 
 	m.App.Session.Put(r.Context(), "flash", "Reservation updated successfully")
 
-	http.Redirect(w, r, fmt.Sprintf("/admin/reservations/%s", sourceStr), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/admin/reservations/details/%d", resStr), http.StatusSeeOther)
 }
 
 type payloadStatus struct {

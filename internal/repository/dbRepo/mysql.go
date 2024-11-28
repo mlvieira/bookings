@@ -693,7 +693,7 @@ func (m *mysqlDBRepo) UpdateProcessedForReservation(id, processed int) error {
 					reservations
 				SET
 					processed = ?
-					updated_at = ?
+					, updated_at = ?
 				WHERE
 					id = ?
 			`)

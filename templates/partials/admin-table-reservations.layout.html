@@ -1,0 +1,29 @@
+{{define "table-reservations-admin"}}
+        <table class="table table-striped table-hover my-3" id="tableadmin">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Room</th>
+                    <th>Arrival</th>
+                    <th>Departure</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .res}}
+                    <tr>
+                        <td>{{.ID}}</td>
+                        <td>
+                            <a href="/admin/reservations/details/{{.ID}}">
+                                {{concat .FirstName .LastName}}
+                            </a>
+                        </td>
+                        <td>{{.Room.RoomName}}</td>
+                        <td>{{humanDate .StartDate}}</td>
+                        <td>{{humanDate .EndDate}}</td>
+                    </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+{{end}}

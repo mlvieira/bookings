@@ -6,7 +6,10 @@ Reservation summary
 {{define "content"}}
 <div class="col-md-12">
     {{$res := index .Data "reservation"}}
-    {{$src := index .StringMap "src"}}
+    {{- $status := "new" -}}
+    {{if eq $res.Processed 1}}
+        {{$status = "all"}}
+    {{end}}
     <div class="row">
         <div class="col">
             <hr>
@@ -15,7 +18,7 @@ Reservation summary
     </div>
     <h4 class="fw-bold mb-2">Edit Reservation</h4>
     <hr>
-    <form action="/admin/reservations/{{$src}}/{{$res.ID}}" method="POST" class="needs-validation row g-3" novalidate>
+    <form action="/admin/reservations/details/{{$res.ID}}" method="POST" class="needs-validation row g-3" novalidate>
         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
         <div class="col-md-6">
             <label for="first_name" class="form-label">First Name</label>
@@ -53,9 +56,9 @@ Reservation summary
         </div>
         <div class="col-md-12 d-flex align-items-center">
             <button type="submit" class="btn btn-primary me-2">Send</button>
-            <a href="/admin/reservations/{{$src}}" class="btn btn-warning me-2">Cancel</a>
+            <a href="/admin/reservations/{{$status}}" class="btn btn-warning me-2">Cancel</a>
             <button type="button" class="btn btn-info me-2" id="markProcessed" data-id="{{$res.ID}}" {{if eq $res.Processed 1}}disabled{{end}}>Mark as Processed</button>
-            <button type="button" class="btn btn-danger ms-auto" id="deleteRes" data-id="{{$res.ID}}" data-source="{{$src}}">Delete</button>
+            <button type="button" class="btn btn-danger ms-auto" id="deleteRes" data-id="{{$res.ID}}" data-source="{{$status}}">Delete</button>
         </div>
     </form>
 </div>
