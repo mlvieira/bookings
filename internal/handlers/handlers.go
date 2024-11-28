@@ -495,6 +495,41 @@ func (m *Repository) AdminAllReservations(w http.ResponseWriter, r *http.Request
 	})
 }
 
+func (m *Repository) JsonAdminCalendarReservations(w http.ResponseWriter, r *http.Request) {
+	reservations, err := m.DB.AllReservations()
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Internal Server error")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)
+		return
+	}
+
+	var calendarResponses []models.CalendarResponse
+
+	for _, res := range reservations {
+		calendarResponse := models.CalendarResponse{
+			ID:       fmt.Sprintf("%d", res.ID),
+			Title:    fmt.Sprintf("%s room reservation", res.Room.RoomName),
+			Start:    res.StartDate,
+			End:      res.EndDate,
+			AllDay:   true,
+			Url:      fmt.Sprintf("/admin/reservations/all/%d", res.ID),
+			Editable: false,
+			ExtendedProps: map[string]any{
+				"name":        fmt.Sprintf("%s %s", res.FirstName, res.LastName),
+				"room":        res.Room.RoomName,
+				"lastUpdated": res.UpdatedAt,
+			},
+		}
+		calendarResponses = append(calendarResponses, calendarResponse)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(calendarResponses); err != nil {
+		helpers.ServerError(w, err)
+	}
+
+}
+
 func (m *Repository) AdminCalendarReservations(w http.ResponseWriter, r *http.Request) {
 	render.Template(w, r, "admin-calendar-reservations.page.html", &models.TemplateData{})
 }

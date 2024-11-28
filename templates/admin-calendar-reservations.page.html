@@ -6,6 +6,13 @@
 
 {{define "content"}}
     <div class="col-md-12">
-        Reservations calendar content
+        <div class="row">
+            <div id="calendar" class="bg-white py-4 mt-2"></div>
+        </div>
     </div>
+{{end}}
+
+{{define "js"}}
+    <script src="/static/admin/vendors/full-calendar/js/index.global.min.js"></script>
+    <script src="/static/admin/js/calendar.js"></script>
 {{end}}

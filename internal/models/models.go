@@ -73,3 +73,15 @@ type MailData struct {
 	Content  string
 	Template string
 }
+
+type CalendarResponse struct {
+	ID            string         `json:"id"`
+	Title         string         `json:"title"`
+	Start         time.Time      `json:"start"`
+	End           time.Time      `json:"end"`
+	AllDay        bool           `json:"allDay"`
+	Url           string         `json:"url"`
+	LastUpdated   time.Time      `json:"lastUpdated"`
+	Editable      bool           `json:"editable"`
+	ExtendedProps map[string]any `json:"extendedProps"`
+}
