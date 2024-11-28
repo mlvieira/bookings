@@ -53,34 +53,8 @@
         </div>
     </div>
     <div class="row row-cols-1 row-cols-md-2 g-4 mt-3">
-        <div class="col">
-            <div class="card cards shadow">
-                <img src="/static/images/generals-quarters.png" class="card-img-top" alt="...">
-                <div class="card-body">
-                    <h5 class="card-title">General's quarter</h5>
-                    <p class="card-text">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Modi eveniet
-                        quibusdam quam eligendi! Non eum repellendus dolorum ducimus dicta quidem, sed ad deserunt fuga
-                        illum soluta blanditiis, aut iure itaque!</p>
-                    <div class="col text-center mt-4">
-                        <a href="/rooms/generals-quarter" class="btn btn-success shadow">View</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="card cards shadow">
-                <img src="/static/images/majors-suite.png" class="card-img-top" alt="...">
-                <div class="card-body">
-                    <h5 class="card-title">Major's suite</h5>
-                    <p class="card-text">Lorem ipsum dolor sit amet consectetur, adipisicing elit. Modi eveniet
-                        quibusdam quam eligendi! Non eum repellendus dolorum ducimus dicta quidem, sed ad deserunt fuga
-                        illum soluta blanditiis, aut iure itaque!</p>
-                    <div class="col text-center mt-4">
-                        <a href="/rooms/majors-suite" class="btn btn-success shadow">View</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {{$rooms := index .Data "rooms"}}
+        {{template "card-room" (dict "rooms" $rooms)}}
     </div>
         <div class="col text-center my-5">
             <h1>Did you like our rooms?</h1>

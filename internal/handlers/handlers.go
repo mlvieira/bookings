@@ -42,7 +42,17 @@ func NewHandlers(r *Repository) {
 
 // Landing handles the GET request for the landing page
 func (m *Repository) Landing(w http.ResponseWriter, r *http.Request) {
-	render.Template(w, r, "landing.page.html", &models.TemplateData{})
+	rooms, err := m.DB.GetAllRooms(6)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
+	data := make(map[string]any)
+	data["rooms"] = rooms
+
+	render.Template(w, r, "landing.page.html", &models.TemplateData{
+		Data: data,
+	})
 }
 
 // Contact handles the GET request for the contact page

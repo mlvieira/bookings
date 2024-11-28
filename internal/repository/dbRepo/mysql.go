@@ -716,3 +716,53 @@ func (m *mysqlDBRepo) UpdateProcessedForReservation(id, processed int) error {
 
 	return nil
 }
+
+// GetAllRooms gets all rooms registred
+func (m *mysqlDBRepo) GetAllRooms(limit int) ([]models.Room, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var rooms []models.Room
+
+	stmt, err := m.DB.Prepare(`
+				SELECT
+					id
+					, room_name
+					, room_description
+					, room_url
+				FROM
+					rooms
+				LIMIT ?
+			`)
+	if err != nil {
+		return rooms, err
+	}
+
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(ctx, limit)
+	if err != nil {
+		return rooms, err
+	}
+
+	for rows.Next() {
+		var r models.Room
+		err := rows.Scan(
+			&r.ID,
+			&r.RoomName,
+			&r.RoomDescription,
+			&r.RoomURL,
+		)
+		if err != nil {
+			return rooms, err
+		}
+
+		rooms = append(rooms, r)
+	}
+
+	if err = rows.Err(); err != nil {
+		return rooms, err
+	}
+
+	return rooms, nil
+}

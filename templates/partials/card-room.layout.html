@@ -1,0 +1,16 @@
+{{define "card-room"}}
+    {{range .rooms}}
+    <div class="col">
+        <div class="card shadow cards">
+            <img src="/static/images/{{.RoomURL}}.png" class="card-img-top" alt="...">
+            <div class="card-body">
+                <h5 class="card-title">{{.RoomName}}</h5>
+                <p class="card-text">{{.RoomDescription}}</p>
+                <div class="col text-center mt-4">
+                    <a href="/rooms/book/{{.ID}}" class="btn btn-success shadow">View</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{end}}
+{{end}}

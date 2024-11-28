@@ -9,20 +9,7 @@
     </div>
     <div class="row row-cols-1 row-cols-md-2 g-4 mt-3">
         {{$rooms := index .Data "rooms"}}
-        {{range $rooms}}
-        <div class="col">
-            <div class="card shadow">
-                <img src="/static/images/{{.RoomURL}}.png" class="card-img-top" alt="...">
-                <div class="card-body">
-                    <h5 class="card-title">{{.RoomName}}</h5>
-                    <p class="card-text">{{.RoomDescription}}</p>
-                    <div class="col text-center mt-4">
-                        <a href="/rooms/book/{{.ID}}" class="btn btn-success shadow">View</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {{end}}
+        {{template "card-room" (dict "rooms" $rooms)}}
     </div>
 </div>
 {{end}}
