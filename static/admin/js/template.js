@@ -1,126 +1,61 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const mainContent = document.getElementById('main-content');
-    const navLinks = document.querySelectorAll('.nav li a');
+    'use strict';
 
-    const toggleArrow = (collapse, expand) => {
-        const arrow = collapse.closest('.nav-item')?.querySelector('.menu-arrow');
-        if (arrow) {
-            arrow.classList.toggle('fa-arrow-up', expand);
-            arrow.classList.toggle('fa-arrow-down', !expand);
+    const body = document.body;
+    const sidebar = document.querySelector('.sidebar');
+
+    const addActiveClass = (element) => {
+        const href = element.getAttribute('href');
+        if (!href) return;
+
+        const linkPath = new URL(href, window.location.origin).pathname.replace(/\/$/, '');
+        const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
+
+        if (linkPath !== currentPath) return;
+
+        element.classList.add('active');
+
+        const collapseElement = element.closest('.collapse');
+        if (collapseElement) {
+            collapseElement.classList.add('show');
+
+            const parentNavItem = collapseElement.closest('.nav-item');
+            if (parentNavItem) {
+                parentNavItem.classList.add('active');
+            }
+        } else {
+            const navItem = element.closest('.nav-item');
+            if (navItem) {
+                navItem.classList.add('active');
+            }
         }
-    };
+    }
 
-    const saveDropdownState = () => {
-        const state = {};
-        document.querySelectorAll('.collapse').forEach(collapse => {
-            state[collapse.id] = collapse.classList.contains('show');
-        });
-        localStorage.setItem('dropdownState', JSON.stringify(state));
-    };
+    const links = sidebar.querySelectorAll('.nav li a');
+    links.forEach(link => {
+        addActiveClass(link);
+    });
 
-    const restoreDropdownState = () => {
-        const savedState = JSON.parse(localStorage.getItem('dropdownState')) || {};
-        document.querySelectorAll('.collapse').forEach(collapse => {
-            const isExpanded = savedState[collapse.id];
-            collapse.classList.toggle('show', isExpanded);
-            collapse.closest('.nav-item')?.classList.toggle('active', isExpanded);
-            toggleArrow(collapse, isExpanded);
-        });
-    };
-
-    const updateActiveNav = (url) => {
-        const normalizedUrl = new URL(url, window.location.origin).pathname;
-        let activeFound = false;
-
-        navLinks.forEach(link => {
-            const linkUrl = new URL(link.href, window.location.origin).pathname;
-            const navItem = link.closest('.nav-item');
-            const collapseParent = link.closest('.sub-menu')?.closest('.collapse');
-
-            const isActive = linkUrl === normalizedUrl && !activeFound;
-            link.classList.toggle('active', isActive);
-            navItem?.classList.toggle('active', isActive);
-
-            if (collapseParent) {
-                const shouldExpand = isActive || collapseParent.querySelector('.active');
-                collapseParent.classList.toggle('show', shouldExpand);
-                toggleArrow(collapseParent, shouldExpand);
-                collapseParent.closest('.nav-item')?.classList.toggle('active', shouldExpand);
-            }
-
-            if (isActive) activeFound = true;
-        });
-    };
-
-    const loadContent = async (url) => {
-        mainContent.innerHTML = '<div class="text-center my-5"><div class="spinner-border" role="status"></div></div>';
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('Network error');
-            const html = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const newContent = doc.querySelector('#main-content')?.innerHTML;
-
-            if (newContent) {
-                mainContent.innerHTML = newContent;
-                updateActiveNav(url);
-                saveDropdownState();
-                window.history.pushState({}, '', url);
-            }
-        } catch (error) {
-            const alert = Prompt();
-            await alert.toast({
-                msg: "Failed to load content",
-                icon: "error"
+    const collapses = sidebar.querySelectorAll('.collapse');
+    collapses.forEach(collapse => {
+        collapse.addEventListener('show.bs.collapse', (event) => {
+            collapses.forEach(otherCollapse => {
+                if (otherCollapse !== event.target && otherCollapse.classList.contains('show')) {
+                    const bsCollapse = bootstrap.Collapse.getInstance(otherCollapse);
+                    if (bsCollapse) {
+                        bsCollapse.hide();
+                    }
+                }
             });
-        }
-    };
-
-    navLinks.forEach(link => {
-        link.addEventListener('click', event => {
-            const url = link.getAttribute('href');
-            if (url?.startsWith('/')) {
-                event.preventDefault();
-                loadContent(url);
-            }
         });
     });
 
-    document.querySelectorAll('.collapse').forEach(collapse => {
-        collapse.addEventListener('show.bs.collapse', () => {
-            toggleArrow(collapse, true);
-            saveDropdownState();
+    const minimizeToggle = document.querySelector('[data-bs-toggle="minimize"]');
+    if (minimizeToggle) {
+        minimizeToggle.addEventListener('click', () => {
+            body.classList.toggle('sidebar-icon-only');
         });
-        collapse.addEventListener('hide.bs.collapse', () => {
-            toggleArrow(collapse, false);
-            saveDropdownState();
-        });
-    });
-
-    window.addEventListener('popstate', () => loadContent(location.pathname));
-
-    restoreDropdownState();
-    updateActiveNav(location.pathname);
-
-    document.querySelector('.sidebar')?.addEventListener('show.bs.collapse', event => {
-        document.querySelectorAll('.collapse.show').forEach(collapse => {
-            if (collapse !== event.target) {
-                collapse.classList.remove('show');
-                toggleArrow(collapse, false);
-            }
-        });
-    });
-
-    document.querySelector('[data-bs-toggle="minimize"]')?.addEventListener('click', () => {
-        document.body.classList.toggle('sidebar-icon-only');
-        if (document.body.classList.contains('sidebar-icon-only')) {
-            document.querySelectorAll('.sidebar .collapse.show').forEach(collapse => {
-                collapse.classList.remove('show');
-                toggleArrow(collapse, false);
-            });
-        }
-    });
+    }
 
     const sendRequest = async (url, id, alert) => {
         try {
@@ -171,18 +106,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     icon: "warning",
                     allowOutsideClick: true,
                     showCancelButton: true,
-                    callback: async () => {
-                        const alertResult = await sendRequest(url, id, alert);
-                        if (alertResult) {
-                            switch (selector) {
-                                case '#markProcessed':
-                                    btn.disabled = true;
-                                    break;
-                                case '#deleteRes':
-                                    setTimeout(() => {
-                                        window.location.href = `/admin/reservations/${btn.dataset.source}`
-                                    }, 2 * 1000);
-                                    break;
+                    callback: async (isConfirmed) => {
+                        if (isConfirmed) {
+                            const alertResult = await sendRequest(url, id, alert);
+                            if (alertResult) {
+                                switch (selector) {
+                                    case '#markProcessed':
+                                        btn.disabled = true;
+                                        break;
+                                    case '#deleteRes':
+                                        setTimeout(() => {
+                                            window.location.href = `/admin/reservations/${btn.dataset.source}`;
+                                        }, 2000);
+                                        break;
+                                }
                             }
                         }
                     },
