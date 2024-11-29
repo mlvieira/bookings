@@ -3,6 +3,7 @@ package forms
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/asaskevich/govalidator"
@@ -52,4 +53,14 @@ func (f *Form) IsEmail(field string) {
 	if !govalidator.IsEmail(f.Get(field)) {
 		f.Errors.Add(field, "Invalid email address")
 	}
+}
+
+func (f *Form) IsInt(field string) bool {
+	value := f.Get(field)
+	_, err := strconv.Atoi(value)
+	if err != nil {
+		f.Errors.Add(field, "This field must be of type integer")
+		return false
+	}
+	return true
 }

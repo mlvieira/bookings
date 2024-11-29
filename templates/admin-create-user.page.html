@@ -1,0 +1,63 @@
+{{template "admin" .}}
+
+{{define "page-title"}}
+    Create a new user
+{{end}}
+
+{{define "content"}}
+<div class="col-md-12">
+    {{$usr := index .Data "user"}}
+    <form action="/admin/users/new" method="POST" class="needs-validation row g-3" novalidate>
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="col-md-6">
+            <label for="first_name" class="form-label">First name</label>
+            <input type="text" class="form-control{{with .Form.Errors.Get "first_name"}} border border-danger is-invalid{{end}}"
+                id="first_name" name="first_name" aria-describedby="firstNameHelp" required autocomplete="off"
+                autocapitalize="on" value="{{$usr.FirstName}}">
+            {{with .Form.Errors.Get "first_name"}}
+                <div id="firstNameFeedback" class="invalid-feedback">{{.}}</div>
+            {{end}}
+        </div>
+        <div class="col-md-6">
+            <label for="last_name" class="form-label">Last name</label>
+            <input type="text" class="form-control{{with .Form.Errors.Get "last_name"}} is-invalid{{end}}"
+                id="last_name" name="last_name" aria-describedby="lastNameHelp" required autocomplete="off"
+                autocapitalize="on" value="{{$usr.LastName}}">
+            {{with .Form.Errors.Get "last_name"}}
+                <div id="lastNameFeedback" class="invalid-feedback">{{.}}</div>
+            {{end}}
+        </div>
+        <div class="col-md-6">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control{{with .Form.Errors.Get "email"}} is-invalid{{end}}" id="email"
+                name="email" aria-describedby="email" value="{{$usr.Email}}" required>
+            {{with .Form.Errors.Get "email"}}
+                <div id="emailFeedback" class="invalid-feedback">{{.}}</div>
+            {{end}}
+        </div>
+        <div class="col-md-6">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control{{with .Form.Errors.Get "password"}} is-invalid{{end}}" id="password"
+                name="password" aria-describedby="password">
+            {{with .Form.Errors.Get "password"}}
+                <div id="passwordFeedback" class="invalid-feedback">{{.}}</div>
+            {{end}}
+        </div>
+        <div class="col-md-3">
+            <label for="access_level" class="form-label">Access Level</label>
+            <select class="form-select{{with .Form.Errors.Get "access_level"}} is-invalid{{end}}" id="access_level"
+                name="access_level" aria-describedby="accesslevel" required>
+                <option value="0">1</option>
+                <option value="1">2</option>
+            </select>
+            {{with .Form.Errors.Get "access_level"}}
+                <div id="access_levelFeedback" class="invalid-feedback">{{.}}</div>
+            {{end}}
+        </div>
+        <div class="col-md-12 d-flex align-items-center">
+            <button type="submit" class="btn btn-primary me-2">Send</button>
+            <a href="/admin/users/all" class="btn btn-warning me-2">Cancel</a>
+        </div>
+    </form>
+</div>
+{{end}}

@@ -716,3 +716,61 @@ func (m *Repository) PostJsonAdminDeleteRes(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
 }
+
+func (m *Repository) AdminCreateUser(w http.ResponseWriter, r *http.Request) {
+	data := make(map[string]any)
+
+	data["user"] = models.User{}
+
+	render.Template(w, r, "admin-create-user.page.html", &models.TemplateData{
+		Form: forms.New(nil),
+		Data: data,
+	})
+}
+
+func (m *Repository) PostAdminCreateUser(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	var u models.User
+
+	u.FirstName = r.Form.Get("first_name")
+	u.LastName = r.Form.Get("last_name")
+	u.Email = r.Form.Get("email")
+	u.Password = r.Form.Get("password")
+	accessLevel := r.Form.Get("access_level")
+
+	form := forms.New(r.PostForm)
+
+	form.Required("first_name", "last_name", "email", "password", "access_level")
+	form.MinLength("first_name", 3)
+	form.MinLength("last_name", 3)
+	form.MinLength("password", 8)
+	form.IsEmail("email")
+	form.IsInt("access_level")
+
+	if !form.Valid() {
+		data := make(map[string]any)
+		data["user"] = u
+
+		render.Template(w, r, "admin-create-user.page.html", &models.TemplateData{
+			Form: form,
+			Data: data,
+		})
+		return
+	}
+
+	u.AccessLevel, _ = strconv.Atoi(accessLevel)
+
+	lastID, err := m.DB.CreateUser(u)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	m.App.Session.Put(r.Context(), "flash", fmt.Sprintf("User %d created successfully", lastID))
+	http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+}

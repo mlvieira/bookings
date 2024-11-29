@@ -59,6 +59,24 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center" data-bs-toggle="collapse" href="#users-dp"
+                            aria-expanded="false" aria-controls="users-dp">
+                            <i class="fa-solid fa-user"></i>
+                            <span class="menu-title mx-2">Users</span>
+                            <i class="fa-solid fa-arrow-down ms-auto menu-arrow"></i>
+                        </a>
+                        <div class="collapse" id="users-dp">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/admin/users/new">Create user</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/admin/users/all">View users</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link d-flex align-items-center" data-bs-toggle="collapse" href="#reservation-dp"
                             aria-expanded="false" aria-controls="reservation-dp">
                             <i class="fa-solid fa-book"></i>
@@ -82,7 +100,6 @@
                             <span class="menu-title mx-2">Reservation Calendar</span>
                         </a>
                     </li>
-
                 </ul>
             </nav>
             <div class="main-panel">
@@ -90,7 +107,7 @@
                     <div class="row">
                         <div class="col-md-12 grid-margin">
                             <div class="d-flex justify-content-between align-items-center">
-                                <h4 class="fw-bold mb-0">
+                                <h4 class="fw-bold mb-2">
                                     {{block "page-title" .}}
 
                                     {{end}}

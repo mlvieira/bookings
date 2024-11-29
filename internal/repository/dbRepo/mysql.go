@@ -766,3 +766,58 @@ func (m *mysqlDBRepo) GetAllRooms(limit int) ([]models.Room, error) {
 
 	return rooms, nil
 }
+
+// CreateUser creates a user
+func (m *mysqlDBRepo) CreateUser(user models.User) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return 0, err
+	}
+
+	stmt, err := tx.Prepare(`
+		INSERT INTO
+			users
+			(first_name, last_name, email, password,
+			access_level, created_at, updated_at)
+		VALUES
+			(?, ?, ?, ?, ?, ?, ?)
+	`)
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	defer stmt.Close()
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 8)
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	ret, err := stmt.ExecContext(ctx,
+		user.FirstName,
+		user.LastName,
+		user.Email,
+		hashedPassword,
+		user.AccessLevel,
+		time.Now(),
+		time.Now(),
+	)
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	lastID, _ := ret.LastInsertId()
+
+	return int(lastID), nil
+
+}

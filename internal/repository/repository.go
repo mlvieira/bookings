@@ -23,4 +23,5 @@ type DatabaseRepo interface {
 	DeleteReservation(id int) error
 	UpdateProcessedForReservation(id, processed int) error
 	GetAllRooms(limit int) ([]models.Room, error)
+	CreateUser(user models.User) (int, error)
 }
