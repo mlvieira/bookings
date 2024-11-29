@@ -487,7 +487,7 @@ func (m *Repository) AdminNewReservations(w http.ResponseWriter, r *http.Request
 }
 
 func (m *Repository) AdminAllReservations(w http.ResponseWriter, r *http.Request) {
-	reservations, err := m.DB.AllReservations()
+	reservations, err := m.DB.AllReservations(nil, nil)
 	if err != nil {
 		helpers.ServerError(w, err)
 		return
@@ -502,7 +502,30 @@ func (m *Repository) AdminAllReservations(w http.ResponseWriter, r *http.Request
 }
 
 func (m *Repository) JsonAdminCalendarReservations(w http.ResponseWriter, r *http.Request) {
-	reservations, err := m.DB.AllReservations()
+	query := r.URL.Query()
+	startParam := query.Get("start")
+	endParam := query.Get("end")
+
+	var start, end time.Time
+	var err error
+
+	if startParam != "" {
+		start, err = time.Parse(time.RFC3339, startParam)
+		if err != nil {
+			http.Error(w, "Invalid start date format. Use YYYY-MM-DD.", http.StatusBadRequest)
+			return
+		}
+	}
+
+	if endParam != "" {
+		end, err = time.Parse(time.RFC3339, endParam)
+		if err != nil {
+			http.Error(w, "Invalid end date format. Use YYYY-MM-DD.", http.StatusBadRequest)
+			return
+		}
+	}
+
+	reservations, err := m.DB.AllReservations(&start, &end)
 	if err != nil {
 		m.App.Session.Put(r.Context(), "error", "Internal Server error")
 		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)

@@ -396,14 +396,14 @@ func (m *mysqlDBRepo) Authenticate(email, testPassword string) (models.User, err
 	return user, nil
 }
 
-// AllReservations returns a slice of all reservations
-func (m *mysqlDBRepo) AllReservations() ([]models.Reservation, error) {
+// AllReservations returns a slice of all reservations. or a slice of all reservation during a time frame
+func (m *mysqlDBRepo) AllReservations(start, end *time.Time) ([]models.Reservation, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	var reservations []models.Reservation
 
-	stmt, err := m.DB.Prepare(`
+	query := `
 		SELECT
 			r.id
 			, r.first_name
@@ -421,16 +421,26 @@ func (m *mysqlDBRepo) AllReservations() ([]models.Reservation, error) {
 		FROM
 			reservations r
 		LEFT JOIN
-			rooms rm on r.room_id = rm.id
-		ORDER BY r.start_date asc
-	`)
+			rooms rm ON r.room_id = rm.id
+		WHERE 1=1
+	`
+
+	args := []interface{}{}
+	if start != nil && end != nil {
+		query += " AND r.end_date > ? AND r.start_date < ?"
+		args = append(args, *start, *end)
+	}
+
+	query += " ORDER BY r.start_date ASC"
+
+	stmt, err := m.DB.Prepare(query)
 	if err != nil {
 		return reservations, err
 	}
 
 	defer stmt.Close()
 
-	rows, err := stmt.QueryContext(ctx)
+	rows, err := stmt.QueryContext(ctx, args...)
 	if err != nil {
 		return reservations, err
 	}

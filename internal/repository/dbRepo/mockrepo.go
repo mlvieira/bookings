@@ -99,7 +99,7 @@ func (m *testDBRepo) Authenticate(email, testPassword string) (models.User, erro
 }
 
 // TODO
-func (m *testDBRepo) AllReservations() ([]models.Reservation, error) {
+func (m *testDBRepo) AllReservations(start, end *time.Time) ([]models.Reservation, error) {
 	var reservations []models.Reservation
 
 	return reservations, nil
