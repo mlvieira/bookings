@@ -45,6 +45,13 @@ func createTestReservation(roomID int, roomName string) models.Reservation {
 	}
 }
 
+func createTestUser(userID, accessLevel int) models.User {
+	return models.User{
+		ID:          userID,
+		AccessLevel: accessLevel,
+	}
+}
+
 func handleBookingRequest(
 	t *testing.T,
 	req *http.Request,
@@ -83,11 +90,12 @@ func handleAdminHandlers(
 	t *testing.T,
 	req *http.Request,
 	expectedCode int,
+	user models.User,
 	handler http.HandlerFunc,
 ) {
 	ctx := getCtx(req)
 	req = req.WithContext(ctx)
-	app.Session.Put(ctx, "user_id", 1)
+	app.Session.Put(ctx, "user", user)
 
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
@@ -524,7 +532,7 @@ func TestRepository_AdminDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		handleAdminHandlers(t, req, expectedCode, http.HandlerFunc(Repo.AdminDashboard))
+		handleAdminHandlers(t, req, expectedCode, createTestUser(1, 2), http.HandlerFunc(Repo.AdminDashboard))
 	}
 
 	t.Run("Get dashboard", func(t *testing.T) {

@@ -89,12 +89,13 @@ func (m *testDBRepo) UpdateUser(user models.User) error {
 }
 
 // Authenticate authenticates a user
-func (m *testDBRepo) Authenticate(email, testPassword string) (int, string, error) {
+func (m *testDBRepo) Authenticate(email, testPassword string) (models.User, error) {
+	var user models.User
 	if email != "john@example.com" {
-		return 0, "", errors.New("err")
+		return user, errors.New("err")
 	}
 
-	return 0, "", nil
+	return user, nil
 }
 
 // TODO

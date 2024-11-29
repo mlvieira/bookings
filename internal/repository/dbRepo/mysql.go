@@ -353,46 +353,47 @@ func (m *mysqlDBRepo) UpdateUser(user models.User) error {
 }
 
 // Authenticate authenticates a user
-func (m *mysqlDBRepo) Authenticate(email, testPassword string) (int, string, error) {
+func (m *mysqlDBRepo) Authenticate(email, testPassword string) (models.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	var id int
 	var hashedPassword string
+	var user models.User
 
 	stmt, err := m.DB.Prepare(`
 		SELECT
 			id
 			, password
+			, access_level
 		FROM
 			users
 		WHERE
 			email = ?
 	`)
 	if err != nil {
-		return id, "", err
+		return user, err
 	}
 
 	defer stmt.Close()
 
 	row := stmt.QueryRowContext(ctx, email)
 	err = row.Scan(
-		&id,
+		&user.ID,
 		&hashedPassword,
+		&user.AccessLevel,
 	)
 	if err != nil {
-		return id, "", err
+		return user, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(testPassword))
 	if err == bcrypt.ErrMismatchedHashAndPassword {
-		return 0, "", errors.New("incorrect password")
+		return user, errors.New("incorrect password")
 	} else if err != nil {
-		return 0, "", err
+		return user, err
 	}
 
-	return id, hashedPassword, nil
-
+	return user, nil
 }
 
 // AllReservations returns a slice of all reservations
