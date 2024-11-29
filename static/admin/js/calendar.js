@@ -11,18 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
         },
-        events: async (fetchInfo, successCallback, failureCallback) => {
-            try {
-                const response = await fetch('/admin/reservations/calendar/json');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch events');
-                }
-                const data = await response.json();
-                successCallback(data);
-            } catch (error) {
-                failureCallback(error);
-            }
-        },
+        events: '/admin/reservations/calendar/json',
         eventClick: (info) => {
             const event = info.event;
 
