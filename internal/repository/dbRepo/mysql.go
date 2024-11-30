@@ -832,3 +832,53 @@ func (m *mysqlDBRepo) CreateUser(user models.User) (int, error) {
 	return int(lastID), nil
 
 }
+
+func (m *mysqlDBRepo) ListUsers() ([]models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var users []models.User
+
+	stmt, err := m.DB.Prepare(`
+		SELECT
+			id
+			, first_name
+			, last_name
+			, email
+			, access_level
+		FROM
+			users
+	`)
+	if err != nil {
+		return users, err
+	}
+
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		return users, err
+	}
+
+	for rows.Next() {
+		var u models.User
+		err := rows.Scan(
+			&u.ID,
+			&u.FirstName,
+			&u.LastName,
+			&u.Email,
+			&u.AccessLevel,
+		)
+		if err != nil {
+			return users, err
+		}
+
+		users = append(users, u)
+	}
+
+	if err = rows.Err(); err != nil {
+		return users, err
+	}
+
+	return users, nil
+}

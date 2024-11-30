@@ -139,3 +139,8 @@ func (m *testDBRepo) GetAllRooms(limit int) ([]models.Room, error) {
 func (m *testDBRepo) CreateUser(user models.User) (int, error) {
 	return 1, nil
 }
+
+func (m *testDBRepo) ListUsers() ([]models.User, error) {
+	var users []models.User
+	return users, nil
+}

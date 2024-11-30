@@ -797,3 +797,32 @@ func (m *Repository) PostAdminCreateUser(w http.ResponseWriter, r *http.Request)
 	m.App.Session.Put(r.Context(), "flash", fmt.Sprintf("User %d created successfully", lastID))
 	http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
 }
+
+func (m *Repository) AdminListUsers(w http.ResponseWriter, r *http.Request) {
+	user, ok := m.App.Session.Get(r.Context(), "user").(models.User)
+	if !ok {
+		m.App.Session.Put(r.Context(), "error", "Error getting user information from session")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	if !helpers.HasPermission(user.AccessLevel, 3) {
+		m.App.Session.Put(r.Context(), "error", "You don't have permission for this")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	users, err := m.DB.ListUsers()
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Error fetching data")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	data := make(map[string]any)
+	data["users"] = users
+
+	render.Template(w, r, "admin-table-users.page.html", &models.TemplateData{
+		Data: data,
+	})
+}

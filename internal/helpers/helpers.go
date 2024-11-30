@@ -33,3 +33,7 @@ func IsAuthenticated(r *http.Request) bool {
 
 	return exists
 }
+
+func HasPermission(userAccessLevel, requiredAccessLevel int) bool {
+	return userAccessLevel >= requiredAccessLevel
+}

@@ -49,6 +49,7 @@ func Routes(app *config.AppConfig) http.Handler {
 		mux.Post("/reservations/details/{id}", handlers.Repo.PostAdminReservationSummary)
 		mux.Post("/reservations/processed", handlers.Repo.PostJsonAdminChangeResStatus)
 		mux.Post("/reservations/delete", handlers.Repo.PostJsonAdminDeleteRes)
+		mux.Get("/users", handlers.Repo.AdminListUsers)
 		mux.Get("/users/new", handlers.Repo.AdminCreateUser)
 		mux.Post("/users/new", handlers.Repo.PostAdminCreateUser)
 	})
