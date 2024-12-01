@@ -12,6 +12,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/mlvieira/bookings/internal/driver"
@@ -89,13 +90,17 @@ func handleBookingRequest(
 func handleAdminHandlers(
 	t *testing.T,
 	req *http.Request,
+	useSssion bool,
 	expectedCode int,
 	user models.User,
 	handler http.HandlerFunc,
 ) {
 	ctx := getCtx(req)
 	req = req.WithContext(ctx)
-	app.Session.Put(ctx, "user", user)
+
+	if useSssion {
+		app.Session.Put(ctx, "user", user)
+	}
 
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
@@ -525,17 +530,211 @@ func TestRepository_Logout(t *testing.T) {
 func TestRepository_AdminDashboard(t *testing.T) {
 	execLogout := func(
 		t *testing.T,
+		path string,
 		expectedCode int,
+		useSession bool,
+		user models.User,
+		handler http.HandlerFunc,
 	) {
-		req, err := http.NewRequest("GET", "/admin/dashboard", nil)
+		req, err := http.NewRequest("GET", path, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		handleAdminHandlers(t, req, expectedCode, createTestUser(1, 2), http.HandlerFunc(Repo.AdminDashboard))
+		handleAdminHandlers(t, req, useSession, expectedCode, user, handler)
 	}
 
-	t.Run("Get dashboard", func(t *testing.T) {
-		execLogout(t, http.StatusOK)
+	t.Run("GET - Dashboard", func(t *testing.T) {
+		execLogout(t, "/admin/dashboard", http.StatusOK, true, createTestUser(1, 1), http.HandlerFunc(Repo.AdminDashboard))
 	})
+
+	t.Run("GET - Dashboard Session not found", func(t *testing.T) {
+		execLogout(t, "/admin/dashboard", http.StatusSeeOther, false, models.User{}, http.HandlerFunc(Repo.AdminDashboard))
+	})
+
+	t.Run("GET - New reservations", func(t *testing.T) {
+		execLogout(t, "/admin/reservations/new", http.StatusOK, true, createTestUser(1, 3), http.HandlerFunc(Repo.AdminNewReservations))
+	})
+
+	t.Run("GET - All reservations", func(t *testing.T) {
+		execLogout(t, "/admin/reservations/all", http.StatusOK, true, createTestUser(1, 3), http.HandlerFunc(Repo.AdminAllReservations))
+	})
+
+	t.Run("GET - Calendar - HTML", func(t *testing.T) {
+		execLogout(t, "/admin/reservations/calendar", http.StatusOK, true, createTestUser(1, 3), http.HandlerFunc(Repo.AdminCalendarReservations))
+	})
+
+}
+
+func TestRepository_AdminCalendarReservations(t *testing.T) {
+	testJSONResponse := func(
+		t *testing.T,
+		path string,
+		useSession bool,
+		user models.User,
+		handler http.HandlerFunc,
+		expectedCode int,
+		expectedResponse []models.CalendarResponse,
+	) {
+		req, err := http.NewRequest("GET", path, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+
+		if useSession {
+			app.Session.Put(ctx, "user", user)
+		}
+
+		rr := httptest.NewRecorder()
+		handler.ServeHTTP(rr, req)
+
+		if rr.Code != expectedCode {
+			t.Errorf("Handler returned wrong status code: got %d, expected %d", rr.Code, expectedCode)
+		}
+
+		var actualResponse []models.CalendarResponse
+		err = json.NewDecoder(rr.Body).Decode(&actualResponse)
+		if err != nil {
+			t.Fatalf("Failed to decode JSON response: %v", err)
+		}
+
+		if len(actualResponse) != len(expectedResponse) {
+			t.Fatalf("Expected %d reservations, got %d", len(expectedResponse), len(actualResponse))
+		}
+
+		for i, res := range actualResponse {
+			if res.ID != expectedResponse[i].ID ||
+				res.Title != expectedResponse[i].Title ||
+				!res.Start.Equal(expectedResponse[i].Start) ||
+				!res.End.Equal(expectedResponse[i].End) {
+				t.Errorf("Mismatch in reservation %d: expected %+v, got %+v", i, expectedResponse[i], res)
+			}
+		}
+	}
+
+	t.Run("GET - All reservations JSON - Valid", func(t *testing.T) {
+		expectedResponse := []models.CalendarResponse{
+			{
+				ID:       "1",
+				Title:    "Test room reservation",
+				Start:    time.Date(2024, 12, 1, 0, 0, 0, 0, time.UTC),
+				End:      time.Date(2024, 12, 8, 0, 0, 0, 0, time.UTC),
+				AllDay:   true,
+				Url:      "/admin/reservations/details/1",
+				Editable: false,
+				ExtendedProps: map[string]any{
+					"name":        "John Doe",
+					"room":        "Test Room",
+					"lastUpdated": time.Now(),
+				},
+			},
+		}
+
+		path := "/admin/reservations/calendar/json?start=2024-12-01T00:00:00Z&end=2024-12-08T00:00:00Z"
+		testJSONResponse(t, path, true, createTestUser(1, 3), http.HandlerFunc(Repo.JsonAdminCalendarReservations), http.StatusOK, expectedResponse)
+	})
+
+	t.Run("GET - All Reservations JSON - Wrong Start Format", func(t *testing.T) {
+		path := "/admin/reservations/calendar/json?start=01-12-2024T00:00:00Z&end=2024-12-08T00:00:00Z"
+		expectedErrorResponse := map[string]string{
+			"error": "Invalid start date format. Use RFC3339 format.",
+		}
+
+		req, err := http.NewRequest("GET", path, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rr := httptest.NewRecorder()
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+
+		app.Session.Put(ctx, "user", createTestUser(1, 3))
+
+		Repo.JsonAdminCalendarReservations(rr, req)
+
+		if rr.Code != http.StatusBadRequest {
+			t.Errorf("Handler returned wrong status code: got %d, expected %d", rr.Code, http.StatusBadRequest)
+		}
+
+		var actualErrorResponse map[string]string
+		err = json.NewDecoder(rr.Body).Decode(&actualErrorResponse)
+		if err != nil {
+			t.Fatalf("Failed to decode JSON response: %v", err)
+		}
+
+		if actualErrorResponse["error"] != expectedErrorResponse["error"] {
+			t.Errorf("Expected error message: %q, got: %q", expectedErrorResponse["error"], actualErrorResponse["error"])
+		}
+	})
+
+	t.Run("GET - All Reservations JSON - Wrong End Format", func(t *testing.T) {
+		path := "/admin/reservations/calendar/json?start=2024-12-01T00:00:00Z&end=01-12-2024T00:00:00Z"
+		expectedErrorResponse := map[string]string{
+			"error": "Invalid start date format. Use RFC3339 format.",
+		}
+
+		req, err := http.NewRequest("GET", path, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rr := httptest.NewRecorder()
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+
+		app.Session.Put(ctx, "user", createTestUser(1, 3))
+
+		Repo.JsonAdminCalendarReservations(rr, req)
+
+		if rr.Code != http.StatusBadRequest {
+			t.Errorf("Handler returned wrong status code: got %d, expected %d", rr.Code, http.StatusBadRequest)
+		}
+
+		var actualErrorResponse map[string]string
+		err = json.NewDecoder(rr.Body).Decode(&actualErrorResponse)
+		if err != nil {
+			t.Fatalf("Failed to decode JSON response: %v", err)
+		}
+
+		if actualErrorResponse["error"] != expectedErrorResponse["error"] {
+			t.Errorf("Expected error message: %q, got: %q", expectedErrorResponse["error"], actualErrorResponse["error"])
+		}
+	})
+
+	t.Run("GET - All Reservations JSON - DB Error", func(t *testing.T) {
+		path := "/admin/reservations/calendar/json?start=0001-01-01T00:00:00Z&end=2024-12-08T00:00:00Z"
+
+		req, err := http.NewRequest("GET", path, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rr := httptest.NewRecorder()
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+
+		app.Session.Put(ctx, "user", createTestUser(1, 3))
+
+		Repo.JsonAdminCalendarReservations(rr, req)
+
+		if rr.Code != http.StatusInternalServerError {
+			t.Errorf("Handler returned wrong status code: got %d, expected %d", rr.Code, http.StatusInternalServerError)
+		}
+
+		var actualErrorResponse map[string]string
+		err = json.NewDecoder(rr.Body).Decode(&actualErrorResponse)
+		if err != nil {
+			t.Fatalf("Failed to decode JSON response: %v", err)
+		}
+
+		expectedErrorMessage := "Internal Server Error"
+		if actualErrorResponse["error"] != expectedErrorMessage {
+			t.Errorf("Expected error message: %q, got: %q", expectedErrorMessage, actualErrorResponse["error"])
+		}
+	})
+
 }

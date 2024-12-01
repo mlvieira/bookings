@@ -2,6 +2,7 @@ package dbrepo
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/mlvieira/bookings/internal/models"
@@ -100,7 +101,38 @@ func (m *testDBRepo) Authenticate(email, testPassword string) (models.User, erro
 
 // TODO
 func (m *testDBRepo) AllReservations(start, end *time.Time) ([]models.Reservation, error) {
+	if start != nil && start.IsZero() {
+		return nil, fmt.Errorf("simulated database error")
+	}
+
 	var reservations []models.Reservation
+
+	defaultStart := time.Now()
+	defaultEnd := time.Now().AddDate(0, 0, 7)
+
+	if start == nil {
+		start = &defaultStart
+	}
+	if end == nil {
+		end = &defaultEnd
+	}
+
+	reservations = []models.Reservation{
+		{
+			ID:        1,
+			FirstName: "John",
+			LastName:  "Doe",
+			Email:     "johndoe@example.com",
+			Phone:     "123-456-7890",
+			StartDate: *start,
+			EndDate:   *end,
+			Room: models.Room{
+				ID:       1,
+				RoomName: "Test",
+			},
+			UpdatedAt: time.Now(),
+		},
+	}
 
 	return reservations, nil
 }

@@ -525,7 +525,11 @@ func (m *Repository) JsonAdminCalendarReservations(w http.ResponseWriter, r *htt
 	if startParam != "" {
 		start, err = time.Parse(time.RFC3339, startParam)
 		if err != nil {
-			http.Error(w, "Invalid start date format. Use YYYY-MM-DD.", http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "Invalid start date format. Use RFC3339 format.",
+			})
 			return
 		}
 	}
@@ -533,15 +537,22 @@ func (m *Repository) JsonAdminCalendarReservations(w http.ResponseWriter, r *htt
 	if endParam != "" {
 		end, err = time.Parse(time.RFC3339, endParam)
 		if err != nil {
-			http.Error(w, "Invalid end date format. Use YYYY-MM-DD.", http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "Invalid start date format. Use RFC3339 format.",
+			})
 			return
 		}
 	}
 
 	reservations, err := m.DB.AllReservations(&start, &end)
 	if err != nil {
-		m.App.Session.Put(r.Context(), "error", "Internal Server error")
-		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error": "Internal Server Error",
+		})
 		return
 	}
 

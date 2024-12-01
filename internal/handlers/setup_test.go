@@ -72,11 +72,25 @@ func getRoutes() http.Handler {
 
 	mux.Route("/admin", func(mux chi.Router) {
 		mux.Use(auth(app.Session))
+
+		mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/admin/dashboard", http.StatusFound)
+		})
 		mux.Get("/dashboard", Repo.AdminDashboard)
 		mux.Get("/reservations/new", Repo.AdminNewReservations)
 		mux.Get("/reservations/all", Repo.AdminAllReservations)
 		mux.Get("/reservations/calendar", Repo.AdminCalendarReservations)
-		mux.Get("/reservations/{src}/{id}", Repo.AdminReservationSummary)
+		mux.Get("/reservations/calendar/json", Repo.JsonAdminCalendarReservations)
+		mux.Get("/reservations/details/{id}", Repo.AdminReservationSummary)
+		mux.Post("/reservations/details/{id}", Repo.PostAdminReservationSummary)
+		mux.Post("/reservations/processed", Repo.PostJsonAdminChangeResStatus)
+		mux.Post("/reservations/delete", Repo.PostJsonAdminDeleteRes)
+		mux.Get("/users", Repo.AdminListUsers)
+		mux.Get("/users/new", Repo.AdminCreateUser)
+		mux.Post("/users/new", Repo.PostAdminCreateUser)
+		mux.Get("/users/details/{id}", Repo.AdminUserSummary)
+		mux.Post("/users/details/{id}", Repo.PostAdminUserSummary)
+		mux.Post("/users/delete", Repo.PostJsonAdminDeleteUser)
 	})
 
 	fileServer := http.FileServer(http.Dir("./static"))
