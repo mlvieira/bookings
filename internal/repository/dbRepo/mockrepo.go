@@ -144,3 +144,7 @@ func (m *testDBRepo) ListUsers() ([]models.User, error) {
 	var users []models.User
 	return users, nil
 }
+
+func (m *testDBRepo) DeleteUser(id int) error {
+	return nil
+}

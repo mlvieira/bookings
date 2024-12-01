@@ -25,4 +25,5 @@ type DatabaseRepo interface {
 	GetAllRooms(limit int) ([]models.Room, error)
 	CreateUser(user models.User) (int, error)
 	ListUsers() ([]models.User, error)
+	DeleteUser(id int) error
 }

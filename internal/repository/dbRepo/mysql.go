@@ -321,6 +321,7 @@ func (m *mysqlDBRepo) UpdateUser(user models.User) error {
 					, email = ?
 					, access_level = ?
 					, updated_at = ?
+					, password = ?
 				WHERE
 					id = ?
 			`)
@@ -331,12 +332,19 @@ func (m *mysqlDBRepo) UpdateUser(user models.User) error {
 
 	defer stmt.Close()
 
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 8)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	_, err = stmt.ExecContext(ctx,
 		user.FirstName,
 		user.LastName,
 		user.Email,
 		user.AccessLevel,
 		time.Now(),
+		hashedPassword,
 		user.ID,
 	)
 	if err != nil {
@@ -881,4 +889,40 @@ func (m *mysqlDBRepo) ListUsers() ([]models.User, error) {
 	}
 
 	return users, nil
+}
+
+// DeleteUser deletes user by id
+func (m *mysqlDBRepo) DeleteUser(id int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return err
+	}
+
+	stmt, err := tx.Prepare(`
+				DELETE FROM	
+					users
+				WHERE
+					id = ?
+			`)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, id)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -1,0 +1,95 @@
+{{template "admin" .}}
+{{define "page-title"}}
+    User summary
+{{end}}
+
+{{define "content"}}
+<div class="col-md-12">
+    {{$user := index .Data "user"}}
+    <div class="row">
+        <div class="col">
+            <hr>
+            <table class="table table-striped">
+                <thead>
+                <tbody>
+                    <tr>
+                        <td>First name:</td>
+                        <td>{{$user.FirstName}}</td>
+                    </tr>
+                    <tr>
+                        <td>Last name:</td>
+                        <td>{{$user.LastName}}</td>
+                    </tr>
+                    <tr>
+                        <td>Email:</td>
+                        <td>{{$user.Email}}</td>
+                    </tr>
+                    <tr>
+                        <td>Access level:</td>
+                        <td>{{$user.AccessLevel}}</td>
+                    </tr>
+                </tbody>
+                </thead>
+            </table>
+        </div>
+    </div>
+    <h4 class="fw-bold mb-2">Edit User</h4>
+    <hr>
+    <form action="/admin/users/details/{{$user.ID}}" method="POST" class="needs-validation row g-3" novalidate>
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+        <div class="col-md-6">
+            <label for="first_name" class="form-label">First name</label>
+            <input type="text" class="form-control{{with .Form.Errors.Get "first_name"}} border border-danger is-invalid{{end}}"
+                id="first_name" name="first_name" aria-describedby="firstNameHelp" required autocomplete="off"
+                autocapitalize="on" value="{{$user.FirstName}}">
+            {{with .Form.Errors.Get "first_name"}}
+                <div id="firstNameFeedback" class="invalid-feedback">{{.}}</div>
+            {{end}}
+        </div>
+        <div class="col-md-6">
+            <label for="last_name" class="form-label">Last name</label>
+            <input type="text" class="form-control{{with .Form.Errors.Get "last_name"}} is-invalid{{end}}"
+                id="last_name" name="last_name" aria-describedby="lastNameHelp" required autocomplete="off"
+                autocapitalize="on" value="{{$user.LastName}}">
+            {{with .Form.Errors.Get "last_name"}}
+                <div id="lastNameFeedback" class="invalid-feedback">{{.}}</div>
+            {{end}}
+        </div>
+        <div class="col-md-6">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control{{with .Form.Errors.Get "email"}} is-invalid{{end}}" id="email"
+                name="email" aria-describedby="email" value="{{$user.Email}}" required>
+            {{with .Form.Errors.Get "email"}}
+                <div id="emailFeedback" class="invalid-feedback">{{.}}</div>
+            {{end}}
+        </div>
+        <div class="col-md-6">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control{{with .Form.Errors.Get "password"}} is-invalid{{end}}" id="password"
+                name="password" aria-describedby="password">
+            {{with .Form.Errors.Get "password"}}
+                <div id="passwordFeedback" class="invalid-feedback">{{.}}</div>
+            {{end}}
+        </div>
+        <div class="col-md-3">
+            <label for="access_level" class="form-label">Access Level</label>
+            <select class="form-select{{with .Form.Errors.Get "access_level"}} is-invalid{{end}}" id="access_level"
+                name="access_level" aria-describedby="accesslevel" required>
+                {{range $i := seq 1 3}}
+                    <option value="{{$i}}"{{if eq $user.AccessLevel $i}} selected{{end}}>
+                        {{$i}}
+                    </option>
+                {{end}}
+            </select>
+            {{with .Form.Errors.Get "access_level"}}
+                <div id="access_levelFeedback" class="invalid-feedback">{{.}}</div>
+            {{end}}
+        </div>
+        <div class="col-md-12 d-flex align-items-center">
+            <button type="submit" class="btn btn-primary me-2">Send</button>
+            <a href="/admin/users" class="btn btn-warning me-2">Cancel</a>
+            <button type="button" class="btn btn-danger ms-auto" id="deleteUsr" data-id="{{$user.ID}}">Delete</button>
+        </div>
+    </form>
+</div>
+{{end}}

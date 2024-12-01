@@ -52,6 +52,9 @@ func Routes(app *config.AppConfig) http.Handler {
 		mux.Get("/users", handlers.Repo.AdminListUsers)
 		mux.Get("/users/new", handlers.Repo.AdminCreateUser)
 		mux.Post("/users/new", handlers.Repo.PostAdminCreateUser)
+		mux.Get("/users/details/{id}", handlers.Repo.AdminUserSummary)
+		mux.Post("/users/details/{id}", handlers.Repo.PostAdminUserSummary)
+		mux.Post("/users/delete", handlers.Repo.PostJsonAdminDeleteUser)
 	})
 
 	mux.NotFound(handlers.Repo.NotFound)

@@ -639,7 +639,7 @@ func (m *Repository) PostAdminReservationSummary(w http.ResponseWriter, r *http.
 }
 
 type payloadStatus struct {
-	ID string `json:"id"`
+	ID int `json:"id"`
 }
 
 func (m *Repository) PostJsonAdminChangeResStatus(w http.ResponseWriter, r *http.Request) {
@@ -657,19 +657,7 @@ func (m *Repository) PostJsonAdminChangeResStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	id, err := strconv.Atoi(payload.ID)
-	if err != nil {
-		resp := jsonResponse{
-			OK:      false,
-			Message: "Invalid reservation ID",
-		}
-		out, _ := json.Marshal(resp)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(out)
-		return
-	}
-
-	err = m.DB.UpdateProcessedForReservation(id, 1)
+	err = m.DB.UpdateProcessedForReservation(payload.ID, 1)
 	if err != nil {
 		resp := jsonResponse{
 			OK:      false,
@@ -706,19 +694,7 @@ func (m *Repository) PostJsonAdminDeleteRes(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	id, err := strconv.Atoi(payload.ID)
-	if err != nil {
-		resp := jsonResponse{
-			OK:      false,
-			Message: "Invalid reservation ID",
-		}
-		out, _ := json.Marshal(resp)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(out)
-		return
-	}
-
-	err = m.DB.DeleteReservation(id)
+	err = m.DB.DeleteReservation(payload.ID)
 	if err != nil {
 		resp := jsonResponse{
 			OK:      false,
@@ -825,4 +801,166 @@ func (m *Repository) AdminListUsers(w http.ResponseWriter, r *http.Request) {
 	render.Template(w, r, "admin-table-users.page.html", &models.TemplateData{
 		Data: data,
 	})
+}
+
+func (m *Repository) AdminUserSummary(w http.ResponseWriter, r *http.Request) {
+	user, ok := m.App.Session.Get(r.Context(), "user").(models.User)
+	if !ok {
+		m.App.Session.Put(r.Context(), "error", "Error getting user information from session")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	if !helpers.HasPermission(user.AccessLevel, 3) {
+		m.App.Session.Put(r.Context(), "error", "You don't have permission for this")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	userIDstr := chi.URLParam(r, "id")
+	usrStr, err := strconv.Atoi(userIDstr)
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Invalid user id")
+		http.Redirect(w, r, "/admin/users", http.StatusTemporaryRedirect)
+		return
+	}
+
+	userData, err := m.DB.GetUserByID(usrStr)
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "User not found")
+		http.Redirect(w, r, "/admin/users", http.StatusSeeOther)
+		return
+	}
+
+	data := make(map[string]any)
+	data["user"] = userData
+
+	render.Template(w, r, "admin-user-summary.page.html", &models.TemplateData{
+		Data: data,
+		Form: forms.New(nil),
+	})
+}
+
+func (m *Repository) PostAdminUserSummary(w http.ResponseWriter, r *http.Request) {
+	user, ok := m.App.Session.Get(r.Context(), "user").(models.User)
+	if !ok {
+		m.App.Session.Put(r.Context(), "error", "Error getting user information from session")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	if !helpers.HasPermission(user.AccessLevel, 3) {
+		m.App.Session.Put(r.Context(), "error", "You don't have permission for this")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusSeeOther)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	userIDstr := chi.URLParam(r, "id")
+	usrStr, err := strconv.Atoi(userIDstr)
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "Invalid user id")
+		http.Redirect(w, r, "/admin/users", http.StatusTemporaryRedirect)
+		return
+	}
+
+	var userData models.User
+
+	userData.ID = usrStr
+	userData.FirstName = r.Form.Get("first_name")
+	userData.LastName = r.Form.Get("last_name")
+	userData.Email = r.Form.Get("email")
+	userData.Password = r.Form.Get("password")
+	accessLevel := r.Form.Get("access_level")
+
+	form := forms.New(r.PostForm)
+
+	form.Required("first_name", "last_name", "email", "password", "access_level")
+	form.MinLength("first_name", 3)
+	form.MinLength("last_name", 3)
+	form.MinLength("password", 8)
+	form.IsEmail("email")
+	form.IsInt("access_level")
+
+	if !form.Valid() {
+		m.App.Session.Put(r.Context(), "error", "Invalid form values")
+		http.Redirect(w, r, fmt.Sprintf("/admin/users/details/%d", usrStr), http.StatusSeeOther)
+		return
+	}
+
+	userData.AccessLevel, _ = strconv.Atoi(accessLevel)
+
+	err = m.DB.UpdateUser(userData)
+	if err != nil {
+		helpers.ServerError(w, err)
+	}
+
+	m.App.Session.Put(r.Context(), "flash", "User updated successfully")
+
+	http.Redirect(w, r, fmt.Sprintf("/admin/users/details/%d", usrStr), http.StatusSeeOther)
+}
+
+func (m *Repository) PostJsonAdminDeleteUser(w http.ResponseWriter, r *http.Request) {
+	user, ok := m.App.Session.Get(r.Context(), "user").(models.User)
+	if !ok {
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Error getting user information from session",
+		}
+		out, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	if !helpers.HasPermission(user.AccessLevel, 3) {
+		resp := jsonResponse{
+			OK:      false,
+			Message: "You don't have permission for this",
+		}
+		out, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	var payload payloadStatus
+
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Internal server error",
+		}
+		out, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	err = m.DB.DeleteUser(payload.ID)
+	if err != nil {
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Error updating database",
+		}
+		out, _ := json.Marshal(resp)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
+	resp := jsonResponse{
+		OK:      true,
+		Message: "User has been deleted!",
+	}
+
+	out, _ := json.Marshal(resp)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(out)
 }

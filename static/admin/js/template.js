@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-Token': document.querySelector('input[name="csrf_token"]').value,
                 },
-                body: JSON.stringify({ id }),
+                body: JSON.stringify({ id: parseInt(id, 10) }),
             });
 
             if (!response.ok) {
@@ -119,6 +119,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                             window.location.href = `/admin/reservations/${btn.dataset.source}`;
                                         }, 2000);
                                         break;
+                                    case '#deleteUsr':
+                                        setTimeout(() => {
+                                            window.location.href = `/admin/users`;
+                                        }, 2000);
+                                        break;
                                 }
                             }
                         }
@@ -129,4 +134,5 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     handleAction('#markProcessed', '/admin/reservations/processed');
     handleAction('#deleteRes', '/admin/reservations/delete');
+    handleAction('#deleteUsr', '/admin/users/delete');
 });

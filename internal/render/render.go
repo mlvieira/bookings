@@ -84,6 +84,7 @@ func CreateTemplateCache() (map[string]*template.Template, error) {
 		"humanDate": humanDate,
 		"dict":      dict,
 		"concat":    concat,
+		"seq":       seq,
 	}
 
 	for _, page := range pages {
@@ -119,4 +120,13 @@ func humanDate(t time.Time) string {
 // concat Concat two strings
 func concat(x, y string) string {
 	return x + " " + y
+}
+
+// seq generates a slice of integers from start to end (inclusive).
+func seq(start, end int) []int {
+	s := make([]int, end-start+1)
+	for i := range s {
+		s[i] = start + i
+	}
+	return s
 }
