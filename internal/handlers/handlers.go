@@ -468,7 +468,20 @@ func (m *Repository) Logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Repository) AdminDashboard(w http.ResponseWriter, r *http.Request) {
-	render.Template(w, r, "admin-dashboard.page.html", &models.TemplateData{})
+	user, ok := m.App.Session.Get(r.Context(), "user").(models.User)
+	if !ok {
+		_ = m.App.Session.Destroy(r.Context())
+		m.App.Session.Put(r.Context(), "error", "Error getting user information from session")
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	data := make(map[string]any)
+	data["user"] = user
+
+	render.Template(w, r, "admin-dashboard.page.html", &models.TemplateData{
+		Data: data,
+	})
 }
 
 func (m *Repository) AdminNewReservations(w http.ResponseWriter, r *http.Request) {
