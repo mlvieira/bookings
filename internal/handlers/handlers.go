@@ -615,7 +615,8 @@ func (m *Repository) AdminReservationSummary(w http.ResponseWriter, r *http.Requ
 func (m *Repository) PostAdminReservationSummary(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "Invalid form")
+		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)
 		return
 	}
 

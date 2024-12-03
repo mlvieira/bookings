@@ -738,3 +738,95 @@ func TestRepository_AdminCalendarReservations(t *testing.T) {
 	})
 
 }
+
+func TestRepository_PostAdminReservationSummary(t *testing.T) {
+	execLogout := func(
+		t *testing.T,
+		reservationID,
+		expectedLocation string,
+		expectedCode int,
+		useForm,
+		useSession bool,
+		form url.Values,
+		user models.User,
+		handler http.HandlerFunc,
+	) {
+		var body io.Reader = nil
+		if useForm {
+			body = strings.NewReader(form.Encode())
+		}
+		req, err := http.NewRequest("POST", fmt.Sprintf("/admin/reservations/details/%s", reservationID), body)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		rctx := chi.NewRouteContext()
+		rctx.URLParams.Add("id", reservationID)
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+		ctx := getCtx(req)
+		req = req.WithContext(ctx)
+
+		if useSession {
+			app.Session.Put(ctx, "user", user)
+		}
+
+		rr := httptest.NewRecorder()
+
+		handler.ServeHTTP(rr, req)
+		app.Session.Destroy(req.Context())
+
+		const errMessage = "Handler returned wrong response code: got %d, wanted %d"
+		if rr.Code != expectedCode {
+			t.Errorf(errMessage, rr.Code, expectedCode)
+		}
+
+		if expectedLocation != "" {
+			location := rr.Header().Get("Location")
+			if location != expectedLocation {
+				t.Errorf("Handler redirected to wrong URL: got %s, wanted %s", location, expectedLocation)
+			}
+		}
+	}
+
+	t.Run("POST - Reservation Summary - Valid", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("first_name", "John")
+		form.Add("last_name", "Doe")
+		form.Add("email", "john@example.com")
+		form.Add("phone", "555555555")
+		execLogout(t, "1", "/admin/reservations/details/1", http.StatusSeeOther, true, true, form, models.User{}, http.HandlerFunc(Repo.PostAdminReservationSummary))
+	})
+
+	t.Run("POST - Reservation Summary - Invalid Form", func(t *testing.T) {
+		execLogout(t, "1", "/admin/dashboard", http.StatusTemporaryRedirect, false, true, nil, models.User{}, http.HandlerFunc(Repo.PostAdminReservationSummary))
+	})
+
+	t.Run("POST - Reservation Summary - Invalid ID", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("first_name", "John")
+		form.Add("last_name", "Doe")
+		form.Add("email", "john@example.com")
+		form.Add("phone", "555555555")
+		execLogout(t, "a", "/admin/dashboard", http.StatusTemporaryRedirect, true, true, form, models.User{}, http.HandlerFunc(Repo.PostAdminReservationSummary))
+	})
+
+	t.Run("POST - Reservation Summary - DB GetReservation error", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("first_name", "John")
+		form.Add("last_name", "Doe")
+		form.Add("email", "john@example.com")
+		form.Add("phone", "555555555")
+		execLogout(t, "2", "/admin/dashboard", http.StatusSeeOther, true, true, form, models.User{}, http.HandlerFunc(Repo.PostAdminReservationSummary))
+	})
+
+	t.Run("POST - Reservation Summary - DB UpdateReservation error", func(t *testing.T) {
+		form := url.Values{}
+		form.Add("first_name", "John")
+		form.Add("last_name", "Doe")
+		form.Add("email", "john@example.com")
+		form.Add("phone", "555555555")
+		execLogout(t, "2", "/admin/dashboard", http.StatusSeeOther, true, true, form, models.User{}, http.HandlerFunc(Repo.PostAdminReservationSummary))
+	})
+
+}

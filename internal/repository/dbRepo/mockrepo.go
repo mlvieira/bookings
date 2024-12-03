@@ -146,10 +146,17 @@ func (m *testDBRepo) AllNewReservations() ([]models.Reservation, error) {
 func (m *testDBRepo) GetReservationById(id int) (models.Reservation, error) {
 	var reservation models.Reservation
 
+	if id == 2 {
+		return reservation, errors.New("err")
+	}
+
 	return reservation, nil
 }
 
 func (m *testDBRepo) UpdateReservation(res models.Reservation) error {
+	if res.RoomID == 3 {
+		return errors.New("err")
+	}
 	return nil
 }
 
