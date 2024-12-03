@@ -485,6 +485,14 @@ func (m *Repository) AdminDashboard(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *Repository) AdminNewReservations(w http.ResponseWriter, r *http.Request) {
+	user, ok := m.App.Session.Get(r.Context(), "user").(models.User)
+	if !ok {
+		_ = m.App.Session.Destroy(r.Context())
+		m.App.Session.Put(r.Context(), "error", "Error getting user information from session")
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
 	reservations, err := m.DB.AllNewReservations()
 	if err != nil {
 		helpers.ServerError(w, err)
@@ -493,6 +501,7 @@ func (m *Repository) AdminNewReservations(w http.ResponseWriter, r *http.Request
 
 	data := make(map[string]any)
 	data["reservations"] = reservations
+	data["user"] = user
 
 	render.Template(w, r, "admin-new-reservations.page.html", &models.TemplateData{
 		Data: data,
@@ -500,6 +509,14 @@ func (m *Repository) AdminNewReservations(w http.ResponseWriter, r *http.Request
 }
 
 func (m *Repository) AdminAllReservations(w http.ResponseWriter, r *http.Request) {
+	user, ok := m.App.Session.Get(r.Context(), "user").(models.User)
+	if !ok {
+		_ = m.App.Session.Destroy(r.Context())
+		m.App.Session.Put(r.Context(), "error", "Error getting user information from session")
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
 	reservations, err := m.DB.AllReservations(nil, nil)
 	if err != nil {
 		helpers.ServerError(w, err)
@@ -508,6 +525,7 @@ func (m *Repository) AdminAllReservations(w http.ResponseWriter, r *http.Request
 
 	data := make(map[string]any)
 	data["reservations"] = reservations
+	data["user"] = user
 
 	render.Template(w, r, "admin-all-reservations.page.html", &models.TemplateData{
 		Data: data,
@@ -584,7 +602,20 @@ func (m *Repository) JsonAdminCalendarReservations(w http.ResponseWriter, r *htt
 }
 
 func (m *Repository) AdminCalendarReservations(w http.ResponseWriter, r *http.Request) {
-	render.Template(w, r, "admin-calendar-reservations.page.html", &models.TemplateData{})
+	user, ok := m.App.Session.Get(r.Context(), "user").(models.User)
+	if !ok {
+		_ = m.App.Session.Destroy(r.Context())
+		m.App.Session.Put(r.Context(), "error", "Error getting user information from session")
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+
+	data := make(map[string]any)
+	data["user"] = user
+
+	render.Template(w, r, "admin-calendar-reservations.page.html", &models.TemplateData{
+		Data: data,
+	})
 }
 
 func (m *Repository) AdminReservationSummary(w http.ResponseWriter, r *http.Request) {
@@ -593,6 +624,14 @@ func (m *Repository) AdminReservationSummary(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		m.App.Session.Put(r.Context(), "error", "Invalid reservation id")
 		http.Redirect(w, r, "/admin/dashboard", http.StatusTemporaryRedirect)
+		return
+	}
+
+	user, ok := m.App.Session.Get(r.Context(), "user").(models.User)
+	if !ok {
+		_ = m.App.Session.Destroy(r.Context())
+		m.App.Session.Put(r.Context(), "error", "Error getting user information from session")
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 		return
 	}
 
@@ -605,6 +644,7 @@ func (m *Repository) AdminReservationSummary(w http.ResponseWriter, r *http.Requ
 
 	data := make(map[string]any)
 	data["reservation"] = res
+	data["user"] = user
 
 	render.Template(w, r, "admin-reservations-summary.page.html", &models.TemplateData{
 		Data: data,
